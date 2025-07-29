@@ -1,0 +1,30 @@
+[
+  {
+    "description": "Wallet Generation",
+    "durationMs": 2.791417
+  },
+  {
+    "description": "NFT Generation",
+    "durationMs": 16.418625
+  },
+  {
+    "description": "NFT Distribution",
+    "durationMs": 1.722542
+  },
+  {
+    "description": "Wants Generation",
+    "durationMs": 2831.330416
+  },
+  {
+    "description": "System Initialization",
+    "durationMs": 90458.491625
+  },
+  {
+    "description": "Total Trade Discovery",
+    "durationMs": 20.199
+  },
+  {
+    "description": "Overall Execution",
+    "durationMs": 93332.496083
+  }
+]

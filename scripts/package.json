@@ -1,0 +1,21 @@
+{
+  "name": "swaps-collection-crawler",
+  "version": "1.0.0", 
+  "description": "Standalone collection crawler for SWAPS project",
+  "main": "collection-crawler.js",
+  "scripts": {
+    "start": "node collection-crawler.js start",
+    "stats": "node collection-crawler.js stats", 
+    "search": "node collection-crawler.js search",
+    "install-deps": "npm install"
+  },
+  "dependencies": {
+    "node-fetch": "^2.6.7"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "keywords": ["solana", "nft", "collections", "crawler", "swaps"],
+  "author": "SWAPS Team",
+  "license": "MIT"
+} 

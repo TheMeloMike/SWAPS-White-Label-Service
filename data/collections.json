@@ -1,0 +1,123 @@
+{
+  "SMBtHCCC6RYRutFEPb4gZqeBLUZbMNhRKaMKZZLHi7W": {
+    "id": "SMBtHCCC6RYRutFEPb4gZqeBLUZbMNhRKaMKZZLHi7W",
+    "name": "SMB #2832",
+    "symbol": "SMB",
+    "verified": false,
+    "totalSupply": 5,
+    "image": "https://arweave.net/_m-tolfQWlY8wgHoEbHOszwYLAMfpk9xVnlx5tIeOwg",
+    "floorPrice": 0,
+    "volume24h": 0,
+    "sources": [
+      "crawler"
+    ],
+    "lastUpdated": 1748030054683,
+    "discoveredAt": 1748030054683,
+    "creators": [
+      "mdaoxg4DVGptU4WSpzGyVpK3zqsgn7Qzx5XNgWTcEA2",
+      "HAryckvjyViFQEmhmMoCtqqBMJnpXEYViamyDhZUJfnG",
+      "9uBX3ASjxWvNBAD1xjbVaKA74mWGZys3RGSF7DdeDD3F"
+    ],
+    "searchTerms": [
+      "smb #2832",
+      "smb",
+      "#2832"
+    ]
+  },
+  "J1S9H3QjnRtBbbuD4HjPV6RpRhwuk4zKbxsnCHuTgh9w": {
+    "id": "J1S9H3QjnRtBbbuD4HjPV6RpRhwuk4zKbxsnCHuTgh9w",
+    "name": "Mad Lads #6867",
+    "symbol": "MAD",
+    "verified": true,
+    "totalSupply": 5,
+    "image": "https://madlads.s3.us-west-2.amazonaws.com/images/6867.png",
+    "floorPrice": 0,
+    "volume24h": 0,
+    "sources": [
+      "crawler"
+    ],
+    "lastUpdated": 1748030054886,
+    "discoveredAt": 1748030054886,
+    "creators": [
+      "5XvhfmRjwXkGp3jHGmaKpqeerNYjkuZZBYLVQYdeVcRv",
+      "2RtGg6fsFiiF1EQzHqbd66AhW7R5bWeQGpTbv2UMkCdW"
+    ],
+    "searchTerms": [
+      "mad lads #6867",
+      "mad",
+      "lads",
+      "#6867"
+    ]
+  },
+  "BUjZjAS2vbbb65g7Z1Ca9ZRVYoJscURG5L3AkVvHP9ac": {
+    "id": "BUjZjAS2vbbb65g7Z1Ca9ZRVYoJscURG5L3AkVvHP9ac",
+    "name": "Fox #7045",
+    "symbol": "FFF",
+    "verified": false,
+    "totalSupply": 5,
+    "image": "https://famousfoxes.com/hd/7045.png",
+    "floorPrice": 0,
+    "volume24h": 0,
+    "sources": [
+      "crawler"
+    ],
+    "lastUpdated": 1748030055014,
+    "discoveredAt": 1748030055014,
+    "creators": [
+      "D3XrkNZz6wx6cofot7Zohsf2KSsu2ArngNk8VqU9cTY3",
+      "3pMvTLUA9NzZQd4gi725p89mvND1wRNQM3C8XEv1hTdA"
+    ],
+    "searchTerms": [
+      "fox #7045",
+      "fff",
+      "fox",
+      "#7045"
+    ]
+  },
+  "4mKSoDDqApmF1DqXvVTSL6tu2zixrSSNjqMxUnwvVzy2": {
+    "id": "4mKSoDDqApmF1DqXvVTSL6tu2zixrSSNjqMxUnwvVzy2",
+    "name": "y00t #11470",
+    "symbol": "Y00T",
+    "verified": false,
+    "totalSupply": 5,
+    "image": "https://metadata.y00ts.com/y/11469.png",
+    "floorPrice": 0,
+    "volume24h": 0,
+    "sources": [
+      "crawler"
+    ],
+    "lastUpdated": 1748030055334,
+    "discoveredAt": 1748030055334,
+    "creators": [
+      "A4FM6h8T5Fmh9z2g3fKUrKfZn6BNFEgByR8QGpdbQhk1",
+      "yootn8Kf22CQczC732psp7qEqxwPGSDQCFZHkzoXp25"
+    ],
+    "searchTerms": [
+      "y00t #11470",
+      "y00t",
+      "#11470"
+    ]
+  },
+  "DRiP2Pn2K6fuMLKQmt5rZWyHiUZ6WK3GChEySUpHSS4x": {
+    "id": "DRiP2Pn2K6fuMLKQmt5rZWyHiUZ6WK3GChEySUpHSS4x",
+    "name": "Louisiana",
+    "symbol": "",
+    "verified": false,
+    "totalSupply": 5,
+    "image": "https://arweave.net/KPqYe5rSfbq78LiflJOIZMghZg0sWTueY016RVYv_GQ?ext=jpg",
+    "floorPrice": 0,
+    "volume24h": 0,
+    "sources": [
+      "crawler"
+    ],
+    "lastUpdated": 1748030055468,
+    "discoveredAt": 1748030055468,
+    "creators": [
+      "DRiPPP2LytGjNZ5fVpdZS7Xi1oANSY3Df1gSxvUKpzny",
+      "WoMbXFtdfH8crq2Zi7bQhfGx2Gv8EN4saP13gcdUGog"
+    ],
+    "searchTerms": [
+      "louisiana"
+    ]
+  }
+}

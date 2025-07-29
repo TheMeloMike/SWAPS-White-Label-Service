@@ -1,0 +1,38 @@
+{
+  "config": {
+    "walletCount": 1000,
+    "nftCount": 10000,
+    "nftsPerWallet": {
+      "min": 1,
+      "max": 10,
+      "distribution": "exponential"
+    },
+    "wantsPerWallet": {
+      "min": 1,
+      "max": 20,
+      "distribution": "normal"
+    },
+    "preferencePatterns": {
+      "directSwap": 0.2,
+      "circularThree": 0.15,
+      "circularLarger": 0.1,
+      "random": 0.55
+    },
+    "nftCollections": {
+      "count": 20,
+      "sizeDistribution": "powerlaw"
+    },
+    "outputDir": "./test-data",
+    "testRuns": 1,
+    "algorithm": {
+      "maxDepth": 10,
+      "minEfficiency": 0.6,
+      "timeout": 60000
+    }
+  },
+  "summary": {
+    "walletCount": 1000,
+    "nftCount": 10000,
+    "collectionCount": 20
+  }
+}

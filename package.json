@@ -1,0 +1,37 @@
+{
+  "name": "swaps",
+  "version": "1.0.0",
+  "description": "SWAPS - Solana NFT Trading Platform",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "dev": "concurrently \"yarn workspace backend dev\" \"yarn workspace frontend dev\"",
+    "dev:frontend": "yarn workspace frontend dev",
+    "dev:backend": "yarn workspace backend dev",
+    "build": "yarn workspace frontend build && yarn workspace backend build",
+    "start": "yarn workspace backend start"
+  },
+  "dependencies": {
+    "@metaplex-foundation/js": "^0.20.1",
+    "@solana/spl-token": "^0.4.0",
+    "axios": "^1.8.4",
+    "bs58": "^6.0.0",
+    "chalk": "^5.4.1",
+    "got": "^11.8.6",
+    "pg-promise": "^11.13.0",
+    "reflect-metadata": "^0.2.2",
+    "tsyringe": "^4.9.1",
+    "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "@types/node-fetch": "^2.6.12",
+    "concurrently": "^8.2.2"
+  },
+  "main": "generate-mock-data.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

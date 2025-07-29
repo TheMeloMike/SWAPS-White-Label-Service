@@ -1,0 +1,109 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+SWAPS RULES
+
+# User Rules for SWAPS Project (Solana Wallet Automated P2P Swaps)
+
+## Project Overview & Goal:
+
+**What is SWAPS?**
+SWAPS is a next-generation engine for decentralized NFT trading that eliminates the need for traditional buy-sell mechanics. Instead of relying on direct sales or auctions, SWAPS uses an advanced algorithm to facilitate multi-party bartering—enabling users to swap NFTs across a network of interconnected wallets. The goal is to dramatically increase liquidity, accessibility, and user agency in NFT markets by unlocking complex trade paths that would be impossible to discover manually.
+
+**What is a Trade Loop?**
+At the core of SWAPS lies the concept of a trade loop. A trade loop is a closed cycle involving multiple users where everyone in the loop receives an NFT they want by giving up one they own. For example:
+*   Alice owns NFT A and wants NFT B.
+*   Bob owns NFT B and wants NFT C.
+*   Carol owns NFT C and wants NFT A.
+This forms a 3-party trade loop where all users get exactly what they want—without any monetary transaction. SWAPS extends this idea to loops of any length, from 2 to 10+ participants, and can identify these complex chains at massive scale.
+
+**What is Multi-Party Bartering?**
+Traditional bartering involves two people directly trading items. Multi-party bartering is the evolution of this idea. It allows an item to be passed between multiple parties to satisfy everyone’s needs in a single transaction cycle. In the context of NFTs:
+*   Instead of one user needing to find a perfect match, the system finds a chain or loop of users whose NFTs and preferences align collectively.
+*   This allows liquidity to emerge even in low-demand or mismatched markets, as long as there’s a viable path connecting wants and haves.
+SWAPS uses graph theory to model this problem. Wallets are nodes, and "wants" are directional edges pointing to the NFTs they desire. The algorithm traverses this graph to detect strongly connected components—areas where loops are possible—and then executes the optimal trade configuration that benefits every participant.
+
+**The Goal of SWAPS**
+The ultimate goal of SWAPS is to become the universal bartering engine for digital assets—starting with NFTs. By turning passive holdings into active liquidity, it gives users new ways to extract value, enter collections they love, and exit unwanted positions, all without needing to sell into the open market. It transforms the concept of "NFT trading" into a seamless, intelligent flow of asset reallocation based purely on intent and mutual benefit.
+
+**Current Algorithmic Approach (Note: This reflects the current implementation and is subject to evolution and iteration):**
+
+*   **Graph Theory (Core Foundation):** SWAPS models the entire NFT trading ecosystem as a directed graph, where Nodes = Wallets or individual NFTs, and Edges = A wallet’s "want" for an NFT owned by another wallet. Trade loops (cycles) are closed paths in this graph.
+*   **Strongly Connected Components (SCCs):** To manage complexity, the system *currently* uses Tarjan’s Algorithm to break the global graph into smaller SCCs (subgraphs where every node can reach every other node). Trade loops exist only within SCCs, drastically reducing the search space.
+*   **Cycle Enumeration:** Within identified SCCs, the system *currently* uses Johnson’s Algorithm to efficiently enumerate all simple cycles (trade loops), avoiding redundant path exploration.
+*   **Optimized Partitioning:** To achieve parallelism, the engine employs custom graph partitioning strategies (dividing SCCs across threads/nodes, grouping wallets) to run multiple loop-finding operations concurrently.
+*   **Trade Scoring & Fairness Metrics:** Found loops are evaluated using an 18-metric scoring system balancing factors like price parity, collection popularity, floor alignment, historical behavior, rarity, and ownership patterns to ensure fairness within a reasonable variance (e.g., ~10%).
+*   **Background Discovery Engine:** A continuous background scan maintains a live cache of profitable loops, high-priority activity, and new listings/wants. *This engine ensures trade opportunities are precomputed continuously, so users see results instantly without waiting for live loop searches.*
+*   **Distributed Architecture:** The system is designed for horizontal scaling using tools like Kafka for distributed messaging and stateless trade processors across multiple nodes (e.g., up to 16) with high linear efficiency (~92%).
+*   **Collection-Level Abstraction (In Progress/Planned):** Future work aims to abstract wants to the collection level (not just specific NFTs) to increase connection density and trade loop formation likelihood.
+
+**(End of Current Algorithmic Approach Section)**
+
+## Core Logic Constraints (Do Not):
+
+*   **Do not attempt to replace multi-party logic with bilateral (1-to-1) trade models.** The essence of SWAPS is finding complex loops.
+*   **Do not simplify loop search to greedy algorithms or basic 1:1 matching heuristics.** Comprehensive cycle detection (like the current Johnson's approach or similar) is required.
+*   **Do not discard or bypass the trade scoring logic** when proposing loops or implementing refactors. Fairness and quality evaluation are critical.
+
+## AI Agent Behavior Guidelines:
+
+1.  **Prioritize Task Continuity & Full Context:**
+    *   **Problem:** Summarization prompts cause context loss.
+    *   **Rule:** **CRITICAL:** When prompted to summarize and continue, understand this is for *user* convenience. **YOU MUST RETAIN THE FULL, DETAILED CONTEXT of the *entire* ongoing task.** Do not discard details. If unsure after a summary, refer back to the *pre-summary* conversation history related to the current active task before proceeding. Your primary goal is accurate task completion based on *all* available information.
+
+2.  **Maintain Focus on the Current Task:**
+    *   **Rule:** Always prioritize completing the **most recent user request** accurately. While the overall project context is vital, ensure your actions directly address the specific task at hand.
+
+3.  **Comprehensive File Analysis:**
+    *   **Problem:** Agent skips files or reads only partial content, missing crucial details.
+    *   **Rule:** **CRITICAL:** When a task requires understanding file contents (e.g., implementing features, debugging, refactoring):
+        *   Do not skip reading relevant files identified or provided.
+        *   If the default partial file view (e.g., first ~400 lines) seems insufficient OR if understanding the file requires seeing imports, helper functions, type definitions, or interactions across different sections, **YOU MUST proactively request to read the ENTIRE file** using the appropriate tool options (`should_read_entire_file: true`).
+        *   Err on the side of reading the *complete* file for any file central to the current task, especially if it has been modified recently or interacts with multiple other components.
+        *   Acknowledge when you are reading a partial file and state if you believe you need more context from the rest of the file.
+
+4.  **Leverage Project Context in New Chats:**
+    *   **Problem:** Requires detailed summaries for new chats.
+    *   **Rule:** When starting a new chat, use the "Project Overview & Goal" and "Current Algorithmic Approach" sections above as your baseline understanding of the SWAPS system. I will provide the *specific task*, but you should already know the project's purpose, architecture, and key features *as they currently stand*.
+
+5.  **Proactive Information Gathering:**
+    *   **Rule:** Prefer using available tools (`read_file`, `codebase_search`, `grep_search`, `list_dir`) to gather necessary information from the codebase yourself rather than asking me for details that likely exist within the project files.
+
+6.  **Architecture Flexibility:**
+    *   **Rule:** While the "Current Algorithmic Approach" section describes the system's present state, treat it as context, not dogma. The project is under active development. Be open to discussing, evaluating, and implementing alternative algorithms, data structures, or architectural patterns if requested or if they offer clear advantages for performance, scalability, or functionality, *provided they respect the Core Logic Constraints.*
+
+7.  **Handling New Concepts:**
+    *   **Rule:** If you encounter a new file, feature, or requirement not mentioned in this document, assume it follows the same core principles of multi-party bartering, loop optimization, and NFT liquidity maximization. When in doubt about how to apply these principles, ask for clarification before proceeding.
+
+## Output Expectations:
+
+*   When implementing code changes, always explain:
+    *   What was changed
+    *   Why it was changed
+    *   How it relates to the SWAPS project goals or the trade loop model specifically.
+*   Prefer providing full, working implementations or code blocks over skeleton code or pseudocode, unless explicitly asked for the latter.
+*   Avoid speculative or incomplete answers—if you're unsure about requirements or implementation details, ask a clarifying question first.
+
+## General Preferences:
+
+*   Adhere strictly to coding best practices for the relevant languages (TypeScript, React, Node.js).
+*   Maintain consistency with existing code style and patterns within the project.
+
+## Glossary (For AI Reference):
+
+*   **Trade Loop**: A closed cycle of wallets where each user receives an NFT they want and gives up one they own in a multi-party swap.
+*   **SCC**: Strongly Connected Component – A subgraph within the larger "want graph" where trade loops are mathematically possible because every wallet/node can reach every other wallet/node within that component.
+*   **Collection-Level Want**: A user's desire for *any* suitable NFT from a specified collection (e.g., "wants any CryptoPunk"), rather than a specific token ID.
+*   **Floor NFT**: The lowest-priced NFT currently listed for sale within a specific collection, often used as a proxy for the collection's baseline value or demand.
+
+## Technical Stack & Project Summary (Lower Priority Context):
+
+*   **Project:** SWAPS (Solana Wallet Automated P2P Swaps)
+*   **Core Goal:** Build, enhance, and maintain a high-performance, fair, and user-friendly dynamic multi-party NFT bartering platform on the Solana blockchain.
+*   **Functionality:** Users list owned NFTs for trade and desired NFTs. The backend algorithm identifies multi-user trade loops (cycles) for efficient P2P swaps.
+*   **Key Technical Features (High Level):** Optimized cycle detection (graph theory, potentially Bloom filters), Backend (Node.js/TypeScript) for logic/cycles, Frontend (React/Next.js/TypeScript) for UI/wallet interaction, Solana blockchain integration, focus on performance/scalability/fairness/reliability, environment variables for config, structured logging.
+*   **Tech Stack:** Primarily TypeScript, Node.js (Backend), React/Next.js (Frontend), Solana Web3 libraries (@solana/web3.js, wallet-adapter), styled-components.
+
+---

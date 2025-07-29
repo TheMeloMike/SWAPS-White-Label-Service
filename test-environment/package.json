@@ -1,0 +1,27 @@
+{
+  "name": "@swapscursor/test-environment",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "ts-node src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@metaplex-foundation/js": "^0.19.4",
+    "@solana/web3.js": "^1.87.6",
+    "d3": "^7.8.5",
+    "express": "^4.18.2",
+    "recharts": "^2.10.3",
+    "styled-components": "^6.1.1",
+    "ws": "^8.14.2"
+  },
+  "devDependencies": {
+    "@types/d3": "^7.4.3",
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.10.4",
+    "@types/ws": "^8.5.10",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.3.3"
+  }
+}
