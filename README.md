@@ -1,4 +1,4 @@
-# SWAPS - Solana Wallet Automated P2P Swaps
+# SWAPS
 
 ## Overview
 
@@ -15,7 +15,7 @@ SWAPS is a next-generation engine for decentralized NFT trading that eliminates 
 - **Graph Theory**: Models the ecosystem as a directed graph
 - **Strongly Connected Components**: Uses Tarjan's Algorithm for optimization
 - **Cycle Enumeration**: Johnson's Algorithm for efficient loop discovery
-- **18-Metric Scoring System**: Ensures fair trades with ~2.1% variance
+- **18-Metric Scoring System**: Ensures fair trades with ~10% variance
 
 ### ⚡ High Performance
 - **Distributed Architecture**: Horizontal scaling with Kafka
