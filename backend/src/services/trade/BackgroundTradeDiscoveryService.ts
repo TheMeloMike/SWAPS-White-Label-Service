@@ -233,13 +233,13 @@ export class BackgroundTradeDiscoveryService {
       
       // Check if the NFTs have changed
       const previousNftCount = this.walletNftCounts.get(wallet) || 0;
-      if (currentWallet.nfts.length !== previousNftCount) {
+      if (currentWallet.ownedNfts.size !== previousNftCount) {
         return true;
       }
       
       // Check if the wants have changed
       const previousWantCount = this.walletWantCounts.get(wallet) || 0;
-      if (currentWallet.wants.length !== previousWantCount) {
+      if (currentWallet.wantedNfts.size !== previousWantCount) {
         return true;
       }
       
@@ -495,8 +495,8 @@ export class BackgroundTradeDiscoveryService {
           const walletData = walletsMap.get(walletAddress);
           
           if (walletData) {
-            this.walletNftCounts.set(walletAddress, walletData.nfts.length);
-            this.walletWantCounts.set(walletAddress, walletData.wants.length);
+            this.walletNftCounts.set(walletAddress, walletData.ownedNfts.size);
+            this.walletWantCounts.set(walletAddress, walletData.wantedNfts.size);
             this.walletLastChangeTime.set(walletAddress, Date.now());
           }
         } catch (error) {

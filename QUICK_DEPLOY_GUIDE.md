@@ -14,6 +14,8 @@ sudo npm install -g @railway/cli
 ### Step 2: Deploy
 ```bash
 cd backend
+npm install
+npm run build
 railway login
 railway init
 railway up
@@ -32,6 +34,8 @@ brew install heroku/brew/heroku
 ### Step 2: Deploy
 ```bash
 cd backend
+npm install
+npm run build
 heroku create swaps-white-label-api
 heroku config:set NODE_ENV=production
 heroku config:set HELIUS_API_KEY=your_key_here

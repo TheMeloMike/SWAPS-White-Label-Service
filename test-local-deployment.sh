@@ -11,6 +11,10 @@ if [ ! -d "node_modules" ]; then
     npm install
 fi
 
+# Build the TypeScript code
+echo "🔨 Building TypeScript..."
+npm run build
+
 # Check if .env exists
 if [ ! -f ".env" ]; then
     echo "⚙️ Setting up environment variables..."
@@ -18,9 +22,9 @@ if [ ! -f ".env" ]; then
     echo "🔧 Please edit backend/.env with your API keys"
 fi
 
-# Start the server in background
+# Start the server in background (use dev mode for better development experience)
 echo "🚀 Starting server locally..."
-npm start &
+npm run dev &
 SERVER_PID=$!
 
 # Wait for server to start

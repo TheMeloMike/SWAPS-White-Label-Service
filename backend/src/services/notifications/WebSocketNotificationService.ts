@@ -2,7 +2,7 @@ import { Server as HttpServer } from 'http';
 import WebSocket from 'ws';
 import { IncomingMessage } from 'http';
 import { LoggingService, Logger } from '../../utils/logging/LoggingService';
-import { FeatureFlagService } from '../ai/FeatureFlagService';
+// import { FeatureFlagService } from '../ai/FeatureFlagService'; // Deprecated for white label
 
 export interface NotificationPayload {
   id: string;
@@ -67,7 +67,7 @@ export class WebSocketNotificationService {
   private static instance: WebSocketNotificationService;
   private logger: Logger;
   private wss?: WebSocket.Server;
-  private featureFlagService: FeatureFlagService;
+  // // private featureFlagService: FeatureFlagService; // Deprecated for white label // Deprecated for white label
   
   // User management
   private activeConnections = new Map<string, UserSubscription>();
@@ -97,7 +97,7 @@ export class WebSocketNotificationService {
 
   private constructor() {
     this.logger = LoggingService.getInstance().createLogger('WebSocketNotificationService');
-    this.featureFlagService = FeatureFlagService.getInstance();
+    // this.featureFlagService = FeatureFlagService.getInstance(); // Deprecated for white label
     
     // Start periodic cleanup
     this.startPeriodicCleanup();
