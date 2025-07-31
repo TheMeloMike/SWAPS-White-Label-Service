@@ -160,15 +160,6 @@ export class WebSocketNotificationService {
         return;
       }
 
-      // Check if notifications are enabled for this user
-      if (false) { // Feature flags disabled - allow all connections for white label
-        operation.info('Connection rejected: notifications not enabled for user', {
-          walletAddress: walletAddress.substring(0, 8) + '...'
-        });
-        ws.close(1008, 'Notifications not available');
-        operation.end();
-        return;
-      }
 
       // Create user subscription
       const subscription: UserSubscription = {
