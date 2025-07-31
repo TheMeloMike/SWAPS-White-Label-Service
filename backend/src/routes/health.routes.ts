@@ -1,21 +1,15 @@
 import express from 'express';
-import { TradeDiscoveryService } from '../lib/trade-discovery';
 
 const router = express.Router();
-const tradeDiscovery = TradeDiscoveryService.getInstance();
 
-// Main health check endpoint
+// Main health check endpoint for white label service
 router.get('/', (_req, res) => {
-  const systemState = tradeDiscovery.getSystemState();
   res.json({
     status: 'ok',
-    message: 'SWAPS Backend Running',
+    message: 'SWAPS White Label API is healthy',
     timestamp: new Date().toISOString(),
-    system: {
-      walletCount: systemState.wallets,
-      nftCount: systemState.nfts,
-      tradeRequests: systemState.wanted
-    }
+    service: 'SWAPS White Label API',
+    version: '1.0.0'
   });
 });
 
