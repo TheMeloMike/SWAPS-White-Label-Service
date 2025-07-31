@@ -5,7 +5,17 @@ echo "🚀 Deploying SWAPS White Label API to Railway..."
 # Check if Railway CLI is installed
 if ! command -v railway &> /dev/null; then
     echo "📦 Installing Railway CLI..."
-    npm install -g @railway/cli
+    
+    # Try npm install with sudo
+    if sudo npm install -g @railway/cli; then
+        echo "✅ Railway CLI installed successfully"
+    else
+        echo "❌ Failed to install Railway CLI with npm"
+        echo "💡 Please install manually:"
+        echo "   curl -fsSL https://railway.app/install.sh | sh"
+        echo "   Or visit: https://docs.railway.app/quick-start"
+        exit 1
+    fi
 fi
 
 # Navigate to backend directory

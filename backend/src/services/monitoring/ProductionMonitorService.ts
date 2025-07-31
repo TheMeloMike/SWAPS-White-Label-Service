@@ -208,13 +208,7 @@ export class ProductionMonitorService extends EventEmitter {
   /**
    * Get comprehensive production metrics
    */
-  public getProductionMetrics(): {
-    performance: typeof this.performanceMetrics;
-    sla: typeof this.slaMetrics;
-    health: any;
-    uptime: number;
-    status: 'healthy' | 'degraded' | 'unhealthy';
-  } {
+  public getProductionMetrics() {
     const uptimeMs = Date.now() - this.startTime.getTime();
     const uptimeHours = uptimeMs / (1000 * 60 * 60);
 
