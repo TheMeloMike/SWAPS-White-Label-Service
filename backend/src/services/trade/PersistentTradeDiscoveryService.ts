@@ -5,6 +5,7 @@ import { DeltaDetectionEngine, SubgraphData } from './DeltaDetectionEngine';
 import { WebhookNotificationService } from '../notifications/WebhookNotificationService';
 import { DataSyncBridge } from './DataSyncBridge';
 import { AdvancedCanonicalCycleEngine, AdvancedCycleEngineConfig } from './AdvancedCanonicalCycleEngine';
+import { OptimizationManager } from '../optimization/OptimizationManager';
 import { 
   TenantTradeGraph, 
   AbstractNFT, 
@@ -43,6 +44,9 @@ export class PersistentTradeDiscoveryService extends EventEmitter {
   private canonicalEngine: AdvancedCanonicalCycleEngine;
   private enableCanonicalDiscovery: boolean;
   
+  // 🚀 HIGH-ROI OPTIMIZATION FRAMEWORK
+  private optimizationManager: OptimizationManager;
+  
   // Multi-tenant state management
   private tenantGraphs = new Map<string, TenantTradeGraph>();
   private tenantConfigs = new Map<string, TenantConfig>();
@@ -70,8 +74,12 @@ export class PersistentTradeDiscoveryService extends EventEmitter {
     this.canonicalEngine = AdvancedCanonicalCycleEngine.getInstance();
     this.enableCanonicalDiscovery = process.env.ENABLE_CANONICAL_DISCOVERY === 'true';
     
+    // 🚀 INITIALIZE HIGH-ROI OPTIMIZATION FRAMEWORK
+    this.optimizationManager = OptimizationManager.getInstance();
+    
     this.logger.info('PersistentTradeDiscoveryService initialized', {
-      canonicalDiscoveryEnabled: this.enableCanonicalDiscovery
+      canonicalDiscoveryEnabled: this.enableCanonicalDiscovery,
+      optimizationEnabled: true
     });
   }
 
@@ -198,6 +206,9 @@ export class PersistentTradeDiscoveryService extends EventEmitter {
         graph.changeLog.push(change);
         graph.lastUpdated = new Date();
         
+        // 🚀 Invalidate optimization cache since tenant data changed
+        this.optimizationManager.invalidateTenantCache(tenantId);
+        
         operation.info('NFT added and loops discovered', {
           tenantId,
           nftId: nft.id,
@@ -299,6 +310,9 @@ export class PersistentTradeDiscoveryService extends EventEmitter {
         graph.changeLog.push(change);
         graph.lastUpdated = new Date();
         
+        // 🚀 Invalidate optimization cache since tenant data changed
+        this.optimizationManager.invalidateTenantCache(tenantId);
+        
         operation.info('Want added and loops discovered', {
           tenantId,
           walletId,
@@ -379,6 +393,9 @@ export class PersistentTradeDiscoveryService extends EventEmitter {
         };
         graph.changeLog.push(change);
         graph.lastUpdated = new Date();
+        
+        // 🚀 Invalidate optimization cache since tenant data changed
+        this.optimizationManager.invalidateTenantCache(tenantId);
         
         operation.info('NFT removed and loops invalidated', {
           tenantId,
@@ -556,34 +573,46 @@ export class PersistentTradeDiscoveryService extends EventEmitter {
     const config = this.getTenantConfig(tenantId);
     
     try {
-      // Convert tenant graph data to canonical engine format
-      const wallets = new Map<string, WalletState>();
-      const nftOwnership = new Map<string, string>();
-      const wantedNfts = new Map<string, Set<string>>();
-      
-      // Transform tenant data for canonical engine
-      for (const [walletId, wallet] of graph.wallets) {
-        const walletState: WalletState = {
-          address: walletId,
-          ownedNfts: new Set(wallet.ownedNFTs.map(nft => nft.id)),
-          wantedNfts: new Set(wallet.wantedNFTs),
-          lastUpdated: new Date()
-        };
-        wallets.set(walletId, walletState);
-        
-        // Build ownership mapping
-        for (const nft of wallet.ownedNFTs) {
-          nftOwnership.set(nft.id, walletId);
-        }
-        
-        // Build wants mapping
-        for (const wantedNftId of wallet.wantedNFTs) {
-          if (!wantedNfts.has(wantedNftId)) {
-            wantedNfts.set(wantedNftId, new Set());
+      // 🚀 HIGH-ROI OPTIMIZATION: Use intelligent caching for data transformation
+      const transformationResult = await this.optimizationManager.optimizeDataTransformation(
+        tenantId,
+        graph,
+        async () => {
+          // Original transformation logic wrapped in optimization function
+          const wallets = new Map<string, WalletState>();
+          const nftOwnership = new Map<string, string>();
+          const wantedNfts = new Map<string, Set<string>>();
+          
+          // Transform tenant data for canonical engine
+          for (const [walletId, wallet] of graph.wallets) {
+            const walletState: WalletState = {
+              address: walletId,
+              ownedNfts: new Set(wallet.ownedNFTs.map(nft => nft.id)),
+              wantedNfts: new Set(wallet.wantedNFTs),
+              lastUpdated: new Date()
+            };
+            wallets.set(walletId, walletState);
+            
+            // Build ownership mapping
+            for (const nft of wallet.ownedNFTs) {
+              nftOwnership.set(nft.id, walletId);
+            }
+            
+            // Build wants mapping
+            for (const wantedNftId of wallet.wantedNFTs) {
+              if (!wantedNfts.has(wantedNftId)) {
+                wantedNfts.set(wantedNftId, new Set());
+              }
+              wantedNfts.get(wantedNftId)!.add(walletId);
+            }
           }
-          wantedNfts.get(wantedNftId)!.add(walletId);
+          
+          return { wallets, nftOwnership, wantedNfts };
         }
-      }
+      );
+
+      // Use the optimized data (either from cache or freshly computed)
+      const { wallets, nftOwnership, wantedNfts } = transformationResult;
       
       // Configure canonical engine with tenant preferences
       const canonicalConfig: AdvancedCycleEngineConfig = {
@@ -609,7 +638,10 @@ export class PersistentTradeDiscoveryService extends EventEmitter {
         wallets: wallets.size,
         nfts: nftOwnership.size,
         wants: wantedNfts.size,
-        config: canonicalConfig
+        config: canonicalConfig,
+        // 🚀 Optimization metrics
+        fromCache: transformationResult.fromCache,
+        transformationTime: transformationResult.computeTime
       });
       
       // 🚀 EXECUTE CANONICAL DISCOVERY

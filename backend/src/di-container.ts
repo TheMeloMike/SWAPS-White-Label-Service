@@ -53,6 +53,11 @@ try {
 // Persistence
 import { FilePersistenceManager } from './lib/persistence/FilePersistenceManager';
 
+// 🚀 HIGH-ROI OPTIMIZATION SERVICES
+import { OptimizationManager } from './services/optimization/OptimizationManager';
+import { DataTransformationCache } from './services/optimization/DataTransformationCache';
+import { QueryOptimizationService } from './services/optimization/QueryOptimizationService';
+
 /**
  * Register white label services with the DI container
  */
@@ -148,6 +153,25 @@ export function registerServices(): void {
     // File persistence (fallback for data storage)
     container.registerSingleton("FilePersistenceManager", FilePersistenceManager);
     console.log('[DI-Container] ✅ FilePersistenceManager registered');
+
+    // 🚀 HIGH-ROI OPTIMIZATION SERVICES (Singleton pattern for performance)
+    const optimizationManager = OptimizationManager.getInstance();
+    container.register("OptimizationManager", {
+      useFactory: () => optimizationManager
+    });
+    console.log('[DI-Container] ✅ OptimizationManager registered');
+
+    const dataTransformationCache = DataTransformationCache.getInstance();
+    container.register("DataTransformationCache", {
+      useFactory: () => dataTransformationCache
+    });
+    console.log('[DI-Container] ✅ DataTransformationCache registered');
+
+    const queryOptimizationService = QueryOptimizationService.getInstance();
+    container.register("QueryOptimizationService", {
+      useFactory: () => queryOptimizationService
+    });
+    console.log('[DI-Container] ✅ QueryOptimizationService registered');
 
     console.log('[DI-Container] ✅ All available white label services registered successfully');
   } catch (error) {
