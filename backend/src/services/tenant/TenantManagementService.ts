@@ -83,7 +83,8 @@ export class TenantManagementService {
     maxDepth: 10,
     minEfficiency: 0.6,
     maxLoopsPerRequest: 100,
-    enableCollectionTrading: true
+    enableCollectionTrading: true,
+    enableCanonicalDiscovery: true  // Default to canonical engine for new tenants
   };
   
   private readonly DEFAULT_RATE_LIMITS = {

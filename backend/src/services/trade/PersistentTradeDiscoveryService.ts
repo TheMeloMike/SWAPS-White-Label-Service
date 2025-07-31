@@ -4,6 +4,7 @@ import { TradeDiscoveryService } from './TradeDiscoveryService';
 import { DeltaDetectionEngine, SubgraphData } from './DeltaDetectionEngine';
 import { WebhookNotificationService } from '../notifications/WebhookNotificationService';
 import { DataSyncBridge } from './DataSyncBridge';
+import { AdvancedCanonicalCycleEngine, AdvancedCycleEngineConfig } from './AdvancedCanonicalCycleEngine';
 import { 
   TenantTradeGraph, 
   AbstractNFT, 
@@ -38,6 +39,10 @@ export class PersistentTradeDiscoveryService extends EventEmitter {
   private webhookService: WebhookNotificationService;
   private dataSyncBridge: DataSyncBridge;
   
+  // ✨ CANONICAL ENGINE INTEGRATION
+  private canonicalEngine: AdvancedCanonicalCycleEngine;
+  private enableCanonicalDiscovery: boolean;
+  
   // Multi-tenant state management
   private tenantGraphs = new Map<string, TenantTradeGraph>();
   private tenantConfigs = new Map<string, TenantConfig>();
@@ -55,13 +60,19 @@ export class PersistentTradeDiscoveryService extends EventEmitter {
     super();
     this.logger = LoggingService.getInstance().createLogger('PersistentTradeDiscovery');
     
-    // Initialize core components
+    // Initialize core services
     this.deltaEngine = new DeltaDetectionEngine();
     this.baseTradeService = TradeDiscoveryService.getInstance();
     this.webhookService = WebhookNotificationService.getInstance();
     this.dataSyncBridge = DataSyncBridge.getInstance();
     
-    this.logger.info('PersistentTradeDiscoveryService initialized');
+    // ✨ INITIALIZE CANONICAL ENGINE
+    this.canonicalEngine = AdvancedCanonicalCycleEngine.getInstance();
+    this.enableCanonicalDiscovery = process.env.ENABLE_CANONICAL_DISCOVERY === 'true';
+    
+    this.logger.info('PersistentTradeDiscoveryService initialized', {
+      canonicalDiscoveryEnabled: this.enableCanonicalDiscovery
+    });
   }
 
   public static getInstance(): PersistentTradeDiscoveryService {
@@ -500,10 +511,167 @@ export class PersistentTradeDiscoveryService extends EventEmitter {
   }
 
   /**
+   * 🚀 CANONICAL ENGINE INTEGRATION: Route discovery to optimal algorithm
+   * 
+   * This method provides surgical routing between legacy and canonical engines
+   * based on configuration and tenant preferences.
+   */
+  private async executeTradeDiscovery(
+    tenantId: string,
+    settings: Partial<TradeDiscoverySettings>,
+    graph: TenantTradeGraph
+  ): Promise<TradeLoop[]> {
+    const operation = this.logger.operation('executeTradeDiscovery');
+    const config = this.getTenantConfig(tenantId);
+    
+    // 🎯 DECISION POINT: Use canonical engine or legacy system
+    const useCanonical = this.enableCanonicalDiscovery && 
+                        config.settings.algorithm.enableCanonicalDiscovery !== false;
+    
+    operation.info('Routing trade discovery', {
+      tenantId,
+      method: useCanonical ? 'canonical' : 'legacy',
+      globalCanonicalEnabled: this.enableCanonicalDiscovery,
+      tenantCanonicalPreference: config.settings.algorithm.enableCanonicalDiscovery
+    });
+    
+    if (useCanonical) {
+      return await this.executeCanonicalDiscovery(tenantId, settings, graph);
+    } else {
+      return await this.executeLegacyDiscovery(tenantId, settings);
+    }
+  }
+  
+  /**
+   * 🔥 CANONICAL ENGINE EXECUTION
+   * 
+   * Uses the AdvancedCanonicalCycleEngine for discovery with all optimizations
+   */
+  private async executeCanonicalDiscovery(
+    tenantId: string,
+    settings: Partial<TradeDiscoverySettings>,
+    graph: TenantTradeGraph
+  ): Promise<TradeLoop[]> {
+    const operation = this.logger.operation('executeCanonicalDiscovery');
+    const config = this.getTenantConfig(tenantId);
+    
+    try {
+      // Convert tenant graph data to canonical engine format
+      const wallets = new Map<string, WalletState>();
+      const nftOwnership = new Map<string, string>();
+      const wantedNfts = new Map<string, Set<string>>();
+      
+      // Transform tenant data for canonical engine
+      for (const [walletId, wallet] of graph.wallets) {
+        const walletState: WalletState = {
+          address: walletId,
+          ownedNfts: new Set(wallet.ownedNFTs.map(nft => nft.id)),
+          wantedNfts: new Set(wallet.wantedNFTs),
+          lastUpdated: new Date()
+        };
+        wallets.set(walletId, walletState);
+        
+        // Build ownership mapping
+        for (const nft of wallet.ownedNFTs) {
+          nftOwnership.set(nft.id, walletId);
+        }
+        
+        // Build wants mapping
+        for (const wantedNftId of wallet.wantedNFTs) {
+          if (!wantedNfts.has(wantedNftId)) {
+            wantedNfts.set(wantedNftId, new Set());
+          }
+          wantedNfts.get(wantedNftId)!.add(walletId);
+        }
+      }
+      
+      // Configure canonical engine with tenant preferences
+      const canonicalConfig: AdvancedCycleEngineConfig = {
+        maxDepth: settings.maxDepth || config.settings.algorithm.maxDepth || 10,
+        timeoutMs: settings.timeoutMs || 30000,
+        maxCyclesPerSCC: config.settings.algorithm.maxLoopsPerRequest || 100,
+        enableBundleDetection: true,
+        canonicalOnly: true,
+        
+        // Advanced optimizations
+        enableLouvainClustering: wallets.size > 10,
+        enableBloomFilters: wallets.size > 20,
+        enableKafkaDistribution: false, // Disable for white label to avoid complexity
+        enableParallelProcessing: wallets.size > 5,
+        maxCommunitySize: 50,
+        bloomFilterCapacity: Math.max(1000, wallets.size * 100),
+        kafkaBatchSize: 10,
+        parallelWorkers: Math.min(4, Math.max(1, Math.floor(wallets.size / 10)))
+      };
+      
+      operation.info('Starting canonical cycle discovery', {
+        tenantId,
+        wallets: wallets.size,
+        nfts: nftOwnership.size,
+        wants: wantedNfts.size,
+        config: canonicalConfig
+      });
+      
+      // 🚀 EXECUTE CANONICAL DISCOVERY
+      const result = await this.canonicalEngine.discoverCanonicalCyclesAdvanced(
+        wallets,
+        nftOwnership,
+        wantedNfts,
+        canonicalConfig
+      );
+      
+      operation.info('Canonical discovery completed', {
+        tenantId,
+        cyclesFound: result.cycles.length,
+        permutationsEliminated: result.metadata.permutationsEliminated,
+        processingTimeMs: result.metadata.processingTimeMs,
+        performance: result.performance
+      });
+      
+      return result.cycles;
+      
+    } catch (error) {
+      operation.error('Canonical discovery failed, falling back to legacy', {
+        tenantId,
+        error: error instanceof Error ? error.message : String(error)
+      });
+      
+      // Graceful fallback to legacy system
+      return await this.executeLegacyDiscovery(tenantId, settings);
+    }
+  }
+  
+  /**
+   * 🔧 LEGACY SYSTEM EXECUTION
+   * 
+   * Uses the existing TradeDiscoveryService (preserved for compatibility)
+   */
+  private async executeLegacyDiscovery(
+    tenantId: string,
+    settings: Partial<TradeDiscoverySettings>
+  ): Promise<TradeLoop[]> {
+    const operation = this.logger.operation('executeLegacyDiscovery');
+    
+    operation.info('Using legacy trade discovery system', { tenantId });
+    
+    // Use the existing synchronized base service
+    const discoveredLoops = await this.baseTradeService.findTradeLoops(settings);
+    
+    operation.info('Legacy discovery completed', {
+      tenantId,
+      loopsFound: discoveredLoops.length
+    });
+    
+    return discoveredLoops;
+  }
+
+  /**
    * Discover trade loops in a specific subgraph using DataSyncBridge (Phase 1.2+)
    * 
    * CRITICAL PRODUCTION FIX: Now uses DataSyncBridge to properly sync data
    * between the persistent graph and the algorithm layer
+   * 
+   * 🚀 ENHANCED: Now routes to canonical engine when enabled
    */
   private async discoverLoopsInSubgraph(
     tenantId: string, 
@@ -526,13 +694,13 @@ export class PersistentTradeDiscoveryService extends EventEmitter {
         maxDepth: config.settings.algorithm.maxDepth,
         minEfficiency: config.settings.algorithm.minEfficiency,
         maxResults: config.settings.algorithm.maxLoopsPerRequest,
-        considerCollections: config.settings.algorithm.enableCollectionTrading
+        timeoutMs: 30000
       };
       
-      // Now the baseTradeService has the correct data - run discovery
-      const discoveredLoops = await this.baseTradeService.findTradeLoops(settings);
+      // 🚀 ROUTE TO OPTIMAL DISCOVERY ENGINE
+      const discoveredLoops = await this.executeTradeDiscovery(tenantId, settings, graph);
       
-      operation.info('Trade loops discovered with synchronized data', {
+      operation.info('Trade loops discovered with optimal routing', {
         tenantId,
         subgraphSize: subgraph.affectedWallets.size,
         loopsFound: discoveredLoops.length,

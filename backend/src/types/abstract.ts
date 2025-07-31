@@ -67,6 +67,7 @@ export interface TenantConfig {
       minEfficiency: number;               // Minimum efficiency threshold
       maxLoopsPerRequest: number;          // Rate limiting
       enableCollectionTrading: boolean;    // Allow collection-level wants
+      enableCanonicalDiscovery?: boolean;  // Use canonical cycle engine (optional, defaults to global setting)
     };
     rateLimits: {
       discoveryRequestsPerMinute: number;
