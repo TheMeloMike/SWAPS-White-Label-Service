@@ -80,9 +80,25 @@ export class WhiteLabelController {
           walletsCount: request.wallets.length
         });
 
+        // CRITICAL FIX: Ensure wallets have proper ownedNFTs arrays
+        const validatedWallets = request.wallets.map(wallet => {
+          // Convert wallet to proper AbstractWallet format if needed
+          if (!wallet.ownedNFTs || !Array.isArray(wallet.ownedNFTs)) {
+            operation.warn('Wallet missing ownedNFTs array, using empty array', {
+              walletId: wallet.id || 'unknown'
+            });
+            return {
+              ...wallet,
+              ownedNFTs: [],
+              wantedNFTs: wallet.wantedNFTs || []
+            };
+          }
+          return wallet;
+        });
+
         discoveredTrades = await this.persistentTradeService.updateTenantInventory(
           tenant.id, 
-          request.wallets
+          validatedWallets
         );
       } else if (request.walletId) {
         // Get trades for specific wallet
