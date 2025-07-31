@@ -409,7 +409,7 @@ export class TradeLoopFinderService {
           
           // Create the trade loop
           const tradeLoop: TradeLoop = {
-            id: uuidv4(),
+            id: this.generateCanonicalTradeId([wanterWallet, ownerWallet], [responseNft, wantedNft]),
             steps: [
               {
                 from: wanterWallet,
@@ -1205,7 +1205,10 @@ export class TradeLoopFinderService {
           if (allOwnershipValid) {
             // Create a new valid trade loop
             const tradeLoop: TradeLoop = {
-              id: uuidv4(),
+              id: this.generateCanonicalTradeId(
+                cycle, 
+                accumulatedSteps.map(step => step.nfts[0].address)
+              ),
               steps: accumulatedSteps.map(step => ({
                 ...step,
                 completed: false
@@ -1625,5 +1628,19 @@ export class TradeLoopFinderService {
     const edges = graph.get(from);
     if (!edges) return '';
     return edges.get(to) || '';
+  }
+
+  /**
+   * Generates a canonical trade ID based on the trade participants and NFTs involved.
+   * This ensures consistency across different runs and environments.
+   */
+  private generateCanonicalTradeId(participants: string[], nfts: string[]): string {
+    // Sort participants and NFTs to ensure consistent order
+    const sortedParticipants = [...participants].sort();
+    const sortedNfts = [...nfts].sort();
+
+    // Combine and hash to create a unique ID
+    const combined = sortedParticipants.join(',') + '|' + sortedNfts.join(',');
+    return `trade_${combined}`;
   }
 }

@@ -1457,35 +1457,31 @@ export class ScalableTradeLoopFinderService {
    * Create an efficient canonical key for a trade loop
    * This method avoids unnecessary object creation and memory allocation
    * and uses string interning for optimal memory management
+   * 
+   * CRITICAL FIX: Now includes NFT data to prevent same-wallet different-NFT duplicates
    */
   private createEfficientCycleKey(trade: TradeLoop): string {
-    // Use a pre-allocated array to avoid dynamic resizing
-    const wallets: string[] = new Array(trade.totalParticipants);
-    let walletCount = 0;
+    // FIXED: Include both wallets AND NFTs in the canonical key
+    // This prevents the same wallets trading different NFTs from being considered duplicates
     
-    // Track wallets seen with a Set for O(1) lookups
-    const walletSet = new Set<string>();
+    // Create a comprehensive representation including all trade elements
+    const tradeElements: string[] = [];
     
-    // Extract all unique wallets in the trade
+    // Add each step as wallet_pair:nft_address for complete uniqueness
     for (const step of trade.steps) {
-      // Only add if not already seen
-      if (!walletSet.has(step.from)) {
-        walletSet.add(step.from);
-        wallets[walletCount++] = step.from;
-      }
+      const nftAddress = step.nfts[0]?.address || 'unknown';
+      // Create deterministic representation: from->to:nft
+      tradeElements.push(`${step.from}->${step.to}:${nftAddress}`);
     }
     
-    // Only use the portion of the array that was filled
-    const actualWallets = wallets.slice(0, walletCount);
+    // Sort the trade elements to ensure canonical ordering
+    // This handles cycle rotations (A->B->C vs B->C->A vs C->A->B)
+    tradeElements.sort();
     
-    // Sort in-place for canonical representation
-    actualWallets.sort();
-    
-    // Join with a character that won't appear in wallet addresses to ensure uniqueness
-    const key = actualWallets.join('|');
+    // Create the final canonical key
+    const key = tradeElements.join('|');
     
     // Intern the string to reduce memory usage for repetitive keys
-    // This effectively stores only one copy of identical strings in memory
     return String(key);
   }
   

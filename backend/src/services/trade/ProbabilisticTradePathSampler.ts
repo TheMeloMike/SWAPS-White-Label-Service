@@ -478,8 +478,8 @@ export class ProbabilisticTradePathSampler {
       });
     }
     
-    // Generate a unique ID for this trade loop
-    const tradeId = `mc:${cyclePath.join(':')}`;
+    // Generate a canonical trade ID for this trade loop
+    const tradeId = this.generateCanonicalTradeId(cyclePath.slice(0, -1), steps.map(step => step.nfts[0].address));
     
     // Create the trade loop
     return {
@@ -502,5 +502,19 @@ export class ProbabilisticTradePathSampler {
     // Basic implementation: use first part of address as collection ID
     const parts = nftAddress.split(':');
     return parts.length > 1 ? parts[0] : nftAddress.substring(0, 8);
+  }
+
+  /**
+   * Generates a canonical trade ID based on the trade participants and NFTs involved.
+   * This ensures consistency across different runs and environments.
+   */
+  private generateCanonicalTradeId(participants: string[], nfts: string[]): string {
+    // Sort participants and NFTs to ensure consistent order
+    const sortedParticipants = [...participants].sort();
+    const sortedNfts = [...nfts].sort();
+
+    // Combine and hash to create a unique ID
+    const combined = sortedParticipants.join(',') + '|' + sortedNfts.join(',');
+    return `trade_${combined}`;
   }
 } 

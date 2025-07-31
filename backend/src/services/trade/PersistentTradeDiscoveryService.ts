@@ -149,24 +149,38 @@ export class PersistentTradeDiscoveryService extends EventEmitter {
         // Discover new trade loops in affected subgraph
         const newLoops = await this.discoverLoopsInSubgraph(tenantId, subgraph);
         
-        // Cache and emit new loops
+        // Cache and emit new loops WITH DEDUPLICATION
         const tenant = this.getTenantConfig(tenantId);
-        newLoops.forEach(async (loop) => {
-          graph.activeLoops.set(loop.id, loop);
-          this.emit('tradeLoopDiscovered', { 
-            tenantId, 
-            loop, 
-            trigger: 'nft_added',
-            nftId: nft.id 
-          });
-          
-          // Send webhook notification
-          await this.webhookService.notifyTradeLoopDiscovered(
-            tenant,
-            loop,
-            'nft_added',
-            { nftId: nft.id, ownerId: nft.ownership.ownerId }
-          );
+        const actuallyNewLoops: TradeLoop[] = [];
+        
+        for (const loop of newLoops) {
+          // CRITICAL FIX: Only store if not already present
+          if (!graph.activeLoops.has(loop.id)) {
+            graph.activeLoops.set(loop.id, loop);
+            actuallyNewLoops.push(loop);
+            this.emit('tradeLoopDiscovered', { 
+              tenantId, 
+              loop, 
+              trigger: 'nft_added',
+              nftId: nft.id 
+            });
+            
+            // Send webhook notification
+            await this.webhookService.notifyTradeLoopDiscovered(
+              tenant,
+              loop,
+              'nft_added',
+              { nftId: nft.id, ownerId: nft.ownership.ownerId }
+            );
+          }
+        }
+        
+        operation.info('NFT addition: Trade loops processed with deduplication', {
+          tenantId,
+          nftId: nft.id,
+          discoveredLoops: newLoops.length,
+          actuallyNewLoops: actuallyNewLoops.length,
+          duplicatesFiltered: newLoops.length - actuallyNewLoops.length
         });
         
         // Update metadata
@@ -240,16 +254,28 @@ export class PersistentTradeDiscoveryService extends EventEmitter {
         // Discover new trade loops
         const newLoops = await this.discoverLoopsInSubgraph(tenantId, subgraph);
         
-        // Cache and emit new loops
+        // Cache and emit new loops WITH DEDUPLICATION
+        const actuallyNewLoops: TradeLoop[] = [];
         newLoops.forEach(loop => {
-          graph.activeLoops.set(loop.id, loop);
-          this.emit('tradeLoopDiscovered', { 
-            tenantId, 
-            loop, 
-            trigger: 'want_added',
-            walletId,
-            wantedNFTId 
-          });
+          // CRITICAL FIX: Only store if not already present
+          if (!graph.activeLoops.has(loop.id)) {
+            graph.activeLoops.set(loop.id, loop);
+            actuallyNewLoops.push(loop);
+            this.emit('tradeLoopDiscovered', { 
+              tenantId, 
+              loop, 
+              trigger: 'want_added',
+              walletId,
+              wantedNFTId 
+            });
+          }
+        });
+        
+        operation.info('Trade loops processed with deduplication', {
+          tenantId,
+          discoveredLoops: newLoops.length,
+          actuallyNewLoops: actuallyNewLoops.length,
+          duplicatesFiltered: newLoops.length - actuallyNewLoops.length
         });
         
         // Record change

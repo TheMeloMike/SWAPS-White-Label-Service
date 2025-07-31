@@ -891,7 +891,7 @@ export class BundleTradeLoopFinderService {
         
         // Create the trade loop
         const tradeLoop: TradeLoop = {
-          id: uuidv4(),
+          id: this.generateCanonicalTradeId(cycle, steps.map(step => step.nfts[0].address)),
           steps,
           totalParticipants: uniqueParticipants,
           efficiency,
@@ -954,5 +954,19 @@ export class BundleTradeLoopFinderService {
     
     // Sort by score (highest first)
     return scoredLoops.sort((a, b) => b.efficiency - a.efficiency);
+  }
+
+  /**
+   * Generates a canonical trade ID based on the trade participants and NFTs involved.
+   * This ensures consistency across different runs and environments.
+   */
+  private generateCanonicalTradeId(participants: string[], nfts: string[]): string {
+    // Sort participants and NFTs to ensure consistent order
+    const sortedParticipants = [...participants].sort();
+    const sortedNfts = [...nfts].sort();
+
+    // Combine and hash to create a unique ID
+    const combined = sortedParticipants.join(',') + '|' + sortedNfts.join(',');
+    return `trade_${combined}`;
   }
 } 
