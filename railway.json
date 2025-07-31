@@ -1,0 +1,25 @@
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "build": {
+    "builder": "NIXPACKS",
+    "buildCommand": "cd backend && npm install && npm run build"
+  },
+  "deploy": {
+    "startCommand": "cd backend && npm start",
+    "healthcheckPath": "/api/v1/health",
+    "healthcheckTimeout": 100,
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 3
+  },
+  "environments": {
+    "production": {
+      "variables": {
+        "NODE_ENV": "production",
+        "PORT": "${{ PORT }}",
+        "LOG_LEVEL": "info",
+        "ENABLE_PERSISTENCE": "true",
+        "DATA_DIR": "./data"
+      }
+    }
+  }
+} 
