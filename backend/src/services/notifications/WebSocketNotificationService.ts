@@ -161,7 +161,7 @@ export class WebSocketNotificationService {
       }
 
       // Check if notifications are enabled for this user
-      if (!this.featureFlagService.isEnabled('real_time_notifications', walletAddress)) {
+      if (false) { // Feature flags disabled - allow all connections for white label
         operation.info('Connection rejected: notifications not enabled for user', {
           walletAddress: walletAddress.substring(0, 8) + '...'
         });
