@@ -3,6 +3,31 @@
  */
 
 /**
+ * Operation interface for logging and tracking
+ */
+export interface Operation {
+  info(message: string, meta?: any): void;
+  warn(message: string, meta?: any): void;
+  error(message: string, meta?: any): void;
+  complete(): void;
+}
+
+/**
+ * Wallet NFT data structure
+ */
+export interface WalletNFTData {
+  walletAddress: string;
+  nfts: {
+    address: string;
+    name?: string;
+    image?: string;
+    collection?: string;
+    metadata?: any;
+  }[];
+  lastUpdated: Date;
+}
+
+/**
  * Collection metadata interface
  */
 export interface CollectionMetadata {
@@ -31,6 +56,20 @@ export interface CollectionSearchResult {
   collection: CollectionMetadata;
   relevanceScore: number;
   matchType: 'exact' | 'partial' | 'fuzzy';
+}
+
+/**
+ * Collection summary for search results
+ */
+export interface CollectionSummary {
+  id: string;
+  name: string;
+  symbol: string;
+  totalSupply: number;
+  floorPrice: number;
+  verified: boolean;
+  volume24h?: number;
+  volumeTotal?: number;
 }
 
 /**

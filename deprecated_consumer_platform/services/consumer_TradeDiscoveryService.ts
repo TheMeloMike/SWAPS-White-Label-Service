@@ -10,13 +10,7 @@ import {
   PreparedTradeData,
   NFTDemandMetrics,
   NFTValueRecord,
-  TradeDiscoverySettings,
-  NFTMetadata,
-  Operation,
-  WalletNFTData,
-  CollectionMetadata,
-  CollectionSearchResult,
-  CollectionSummary
+  TradeDiscoverySettings
 } from '../../types/trade';
 import { ITradeDiscoveryService } from '../../types/services';
 import { WalletService } from './WalletService';
@@ -40,19 +34,6 @@ import { LocalCollectionService } from '../nft/LocalCollectionService';
 import { CollectionConfigService } from './CollectionConfigService';
 import { DataSyncService } from '../data/DataSyncService';
 import { container } from '../../di-container';
-// CollectionMetadata and CollectionSummary are imported from trade.ts instead
-import { AbstractNFT, BlockchainFormat } from '../../types/abstract';
-import { GraphPartitioningService } from './GraphPartitioningService';
-import { SCCFinderService } from './SCCFinderService';
-import { CycleFinderService } from './CycleFinderService';
-import { DynamicValuationService } from './DynamicValuationService';
-import { EnhancedTradeDiscoveryService } from './EnhancedTradeDiscoveryService';
-import { UnifiedTradeGraphService } from './UnifiedTradeGraphService';
-import { ProbabilisticTradePathSampler } from './ProbabilisticTradePathSampler';
-import { GlobalCollectionResolver } from './GlobalCollectionResolver';
-import { CollectionValidationService } from './CollectionValidationService';
-import { PerformanceOptimizer } from './PerformanceOptimizer';
-import { FilePersistenceManager } from '../../lib/persistence/FilePersistenceManager';
 
 /**
  * Main service for discovering and managing trades

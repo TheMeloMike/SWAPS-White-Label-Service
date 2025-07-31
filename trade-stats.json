@@ -1,9 +1,0 @@
-{
-  "totalTradesFound": 0,
-  "tradesByLoopLength": {},
-  "executionTimes": [],
-  "successRates": {
-    "success": 0,
-    "failed": 20
-  }
-}

@@ -2,214 +2,37 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { LoggingService } from './utils/logging/LoggingService';
-import { BackgroundTradeDiscoveryService } from './services/trade/BackgroundTradeDiscoveryService';
 import { registerServices } from './di-container';
 
-// Load environment variables FIRST
+// Load environment variables
 dotenv.config();
 
-// Try to register services with proper error handling
+// Register dependency injection services
 try {
-  // Call registerServices immediately after env vars and before any route imports
-  registerServices(); 
-  console.log('[App] registerServices() called successfully'); // Diagnostic log
+  registerServices();
+  console.log('[WhiteLabel] Services registered successfully');
 } catch (error) {
-  console.error('[App CRITICAL] Failed to register services:', error);
-  // Continue execution to let the error handler middleware handle any resulting issues
+  console.error('[WhiteLabel CRITICAL] Failed to register services:', error);
+  process.exit(1);
 }
 
-// NOW import routes AFTER services are registered 
-let tradeRoutes;
-let nftRoutes;
-let healthRoutes;
-let trendingRoutes;
-let statsRoutes;
+// Import white label routes
+import whiteLabelApiRoutes from './routes/whiteLabelApi.routes';
+import healthRoutes from './routes/health.routes';
 
-// Import each route with error handling to allow the app to start
-// even if some routes fail to initialize
-try {
-  tradeRoutes = require('./routes/trade.routes').default;
-  console.log('[App] Trade routes imported successfully');
-} catch (error) {
-  console.error('[App ERROR] Failed to import trade routes:', error);
-  // Provide simple fallback route
-  tradeRoutes = express.Router().get('/health', (_, res) => res.json({error: 'Trade routes failed to initialize'}));
-}
-
-try {
-  nftRoutes = require('./routes/nft.routes').default;
-  console.log('[App] NFT routes imported successfully');
-} catch (error) {
-  console.error('[App ERROR] Failed to import NFT routes:', error);
-  nftRoutes = express.Router().get('/health', (_, res) => res.json({error: 'NFT routes failed to initialize'}));
-}
-
-// Import collections routes
-let collectionsRoutes;
-try {
-  console.log('[App] Attempting to import collections routes...');
-  console.log('[App] HELIUS_API_KEY available:', !!process.env.HELIUS_API_KEY);
-  collectionsRoutes = require('./routes/collections.routes').default;
-  console.log('[App] Collections routes imported successfully');
-} catch (error) {
-  console.error('[App ERROR] Failed to import collections routes:', error);
-  console.error('[App ERROR] Error details:', error instanceof Error ? error.stack : String(error));
-  collectionsRoutes = express.Router().get('/health', (_, res) => res.json({error: 'Collections routes failed to initialize'}));
-}
-
-try {
-  healthRoutes = require('./routes/health.routes').default;
-  console.log('[App] Health routes imported successfully');
-} catch (error) {
-  console.error('[App ERROR] Failed to import health routes:', error);
-  healthRoutes = express.Router().get('/', (_, res) => res.json({status: 'Service degraded'}));
-}
-
-// Handle trending routes separately with more detailed error information
-try {
-  // Check if trending routes file exists first
-  const fs = require('fs');
-  const trendingRoutesPath = require.resolve('./routes/trending.routes');
-  console.log('[App] Found trending routes path:', trendingRoutesPath);
-  
-  // Try to load the module
-  trendingRoutes = require('./routes/trending.routes').default;
-  
-  if (!trendingRoutes) {
-    throw new Error('trending.routes.ts exists but exports.default is undefined');
-  }
-  
-  console.log('[App] Trending routes imported successfully');
-} catch (error) {
-  console.error('[App ERROR] Failed to import trending routes - DETAILED ERROR:', error);
-  // Create a dummy route handler that shows the error
-  const dummyRouter = express.Router();
-  
-  dummyRouter.get('/', (_, res) => {
-    res.status(500).json({
-      error: 'Trending routes failed to initialize',
-      details: error instanceof Error ? error.message : String(error),
-      errorObject: JSON.stringify(error, Object.getOwnPropertyNames(error))
-    });
-  });
-  
-  dummyRouter.get('/health', (_, res) => {
-    res.status(500).json({
-      status: 'error',
-      message: 'Trending module failed to load',
-      details: error instanceof Error ? error.message : String(error)
-    });
-  });
-  
-  trendingRoutes = dummyRouter;
-}
-
-// Import stats routes
-try {
-  statsRoutes = require('./routes/stats.routes').default;
-  console.log('[App] Stats routes imported successfully');
-} catch (error) {
-  console.error('[App ERROR] Failed to import stats routes:', error);
-  statsRoutes = express.Router().get('/health', (_, res) => res.json({error: 'Stats routes failed to initialize'}));
-}
-
-// Import AI routes
-let aiRoutes;
-try {
-  aiRoutes = require('./routes/ai.routes').default;
-  console.log('[App] AI routes imported successfully');
-} catch (error) {
-  console.error('[App ERROR] Failed to import AI routes:', error);
-  aiRoutes = express.Router().get('/health', (_, res) => res.json({error: 'AI routes failed to initialize'}));
-}
-
-// Import URL metadata routes
-let urlMetadataRoutes;
-try {
-  urlMetadataRoutes = require('./routes/url-metadata.routes').default;
-  console.log('[App] URL metadata routes imported successfully');
-} catch (error) {
-  console.error('[App ERROR] Failed to import URL metadata routes:', error);
-  urlMetadataRoutes = express.Router().get('/health', (_, res) => res.json({error: 'URL metadata routes failed to initialize'}));
-}
-
-// Import notification routes
-let notificationRoutes;
-try {
-  notificationRoutes = require('./routes/notifications.routes').default;
-  console.log('[App] Notification routes imported successfully');
-} catch (error) {
-  console.error('[App ERROR] Failed to import notification routes:', error);
-  notificationRoutes = express.Router().get('/health', (_, res) => res.json({error: 'Notification routes failed to initialize'}));
-}
-
-// Import dashboard routes
-let dashboardRoutes;
-try {
-  dashboardRoutes = require('./routes/dashboard.routes').default;
-  console.log('[App] Dashboard routes imported successfully');
-} catch (error) {
-  console.error('[App ERROR] Failed to import dashboard routes:', error);
-  dashboardRoutes = express.Router().get('/health', (_, res) => res.json({error: 'Dashboard routes failed to initialize'}));
-}
-
-// Import admin routes
-let adminRoutes;
-try {
-  console.log('[App] Attempting to import admin routes...');
-  adminRoutes = require('./routes/admin.routes').default;
-  console.log('[App] Admin routes imported successfully');
-  console.log('[App] Admin routes type:', typeof adminRoutes);
-} catch (error) {
-  console.error('[App ERROR] Failed to import admin routes:', error);
-  console.error('[App ERROR] Error stack:', error instanceof Error ? error.stack : String(error));
-  adminRoutes = express.Router().get('/health', (_, res) => res.json({error: 'Admin routes failed to initialize'}));
-}
-
-// Import admin-simple routes
-let adminSimpleRoutes;
-try {
-  console.log('[App] Attempting to import admin-simple routes...');
-  adminSimpleRoutes = require('./routes/admin-simple.routes').default;
-  console.log('[App] Admin-simple routes imported successfully');
-} catch (error) {
-  console.error('[App ERROR] Failed to import admin-simple routes:', error);
-  adminSimpleRoutes = express.Router().get('/health', (_, res) => res.json({error: 'Admin-simple routes failed to initialize'}));
-}
-
-const logger = LoggingService.getInstance().createLogger('App');
+const logger = LoggingService.getInstance().createLogger('WhiteLabelApp');
 const app = express();
 
-// CORS configuration
-// In production, use the CORS_ORIGIN environment variable
-// In development, allow all origins with credentials
+// CORS configuration for API service
 const isProd = process.env.NODE_ENV === 'production';
 const corsOrigins = process.env.CORS_ORIGIN 
   ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
   : [];
 
-// Always include common development origins
-if (!isProd) {
-  corsOrigins.push(
-    'http://localhost:3000',
-    'http://localhost:3001',
-    'http://localhost:3002',
-    'http://127.0.0.1:3000',
-    'http://127.0.0.1:3001',
-    'http://127.0.0.1:3002'
-  );
-}
-
-logger.info('CORS configuration:', {
-  isProd,
-  allowedOrigins: corsOrigins,
-  allowAll: !isProd
-});
-
-// Enable CORS for all routes
+// In development, allow all origins. In production, use configured origins.
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps, curl requests)
+    // Allow requests with no origin (like API clients, mobile apps)
     if (!origin) {
       return callback(null, true);
     }
@@ -219,7 +42,7 @@ app.use(cors({
       return callback(null, true);
     }
     
-    // In production, check against the allowed list
+    // In production, check against allowed list
     if (corsOrigins.indexOf(origin) !== -1) {
       return callback(null, true);
     } else {
@@ -232,79 +55,39 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
 }));
 
-// Parse JSON request bodies
-app.use(express.json({ limit: '5mb' }));
+// Parse JSON request bodies (generous limit for NFT metadata)
+app.use(express.json({ limit: '10mb' }));
 
-// Add direct test endpoint for trending
-const directTrendingRouter = express.Router();
-directTrendingRouter.get('/test', (req, res) => {
-  console.log('DIRECT TRENDING TEST ENDPOINT HIT');
+// API Routes
+app.use('/api/v1', whiteLabelApiRoutes);
+app.use('/health', healthRoutes);
+
+// Root endpoint
+app.get('/', (req, res) => {
   res.json({
-    success: true,
-    message: 'Direct trending test endpoint working',
+    service: 'SWAPS White Label API',
+    version: '1.0.0',
+    status: 'operational',
+    endpoints: {
+      api: '/api/v1',
+      health: '/health',
+      documentation: 'https://docs.swaps.com/api'
+    },
     timestamp: new Date().toISOString()
   });
 });
 
-// Routes
-app.use('/api/trades', tradeRoutes);
-app.use('/api/nfts', nftRoutes);
-app.use('/api/collections', collectionsRoutes);
-app.use('/api/stats', statsRoutes);
-app.use('/health', healthRoutes);
-app.use('/api/trending', trendingRoutes);
-app.use('/api/trending-test', directTrendingRouter);
-app.use('/api/ai', aiRoutes);
-app.use('/api/url', urlMetadataRoutes);
-app.use('/api/notifications', notificationRoutes);
-console.log('[App] Mounting admin routes at /api/admin...');
-app.use('/api/admin', adminRoutes);
-console.log('[App] Admin routes mounted successfully');
-console.log('[App] Mounting admin-simple routes at /api/admin-simple...');
-app.use('/api/admin-simple', adminSimpleRoutes);
-console.log('[App] Admin-simple routes mounted successfully');
-app.use('/api/dashboard', dashboardRoutes);
-console.log('[Init] ***IMPORTANT*** Direct trending test endpoint mounted at /api/trending-test/test');
-console.log('[Init] ***IMPORTANT*** Regular trending routes mounted at /api/trending');
-console.log('[Init] ***IMPORTANT*** Stats routes mounted at /api/stats');
-console.log('[Init] ***IMPORTANT*** AI routes mounted at /api/ai');
-console.log('[Init] All core routes mounted.'); // Diagnostic log
-
-// Start background services if enabled
-const enableBackgroundTradeDiscovery = process.env.ENABLE_BACKGROUND_TRADE_DISCOVERY === 'true';
-if (enableBackgroundTradeDiscovery) {
-  logger.info('Starting background trade discovery service');
-  
-  try {
-    const backgroundService = BackgroundTradeDiscoveryService.getInstance();
-    backgroundService.start();
-    
-    // Register process shutdown handler
-    process.on('SIGINT', () => {
-      logger.info('Stopping background trade discovery service');
-      backgroundService.stop();
-    });
-    
-    logger.info('Background trade discovery service started successfully');
-  } catch (error) {
-    logger.error('Failed to start background trade discovery service', {
-      error: error instanceof Error ? error.message : String(error)
-    });
-  }
-} else {
-  logger.info('Background trade discovery service is disabled');
-}
-
-// 404 handler - must be added after all routes
-app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
+// 404 handler
+app.use((req, res) => {
   res.status(404).json({
-    status: 'error',
+    error: 'Not Found',
     message: `Cannot ${req.method} ${req.path}`,
-    code: 'NOT_FOUND'
+    availableEndpoints: ['/api/v1', '/health'],
+    documentation: 'https://docs.swaps.com/api'
   });
 });
 
-// Error handling middleware - must be the last middleware added
+// Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   logger.error('API Error:', {
     path: req.path,
@@ -313,26 +96,43 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
     stack: isProd ? undefined : err.stack
   });
 
-  // Ensure response status is set to an error code
   const statusCode = err.statusCode || err.status || 500;
   
-  // Send error response
   res.status(statusCode).json({
-    status: 'error',
-    message: err.message || 'Internal server error',
-    code: err.code || 'INTERNAL_ERROR'
+    error: err.message || 'Internal server error',
+    code: err.code || 'INTERNAL_ERROR',
+    timestamp: new Date().toISOString()
   });
 });
 
-// Catch uncaught exceptions to prevent server crashes
+// Graceful shutdown handlers
+process.on('SIGTERM', () => {
+  logger.info('SIGTERM received, shutting down gracefully');
+  process.exit(0);
+});
+
+process.on('SIGINT', () => {
+  logger.info('SIGINT received, shutting down gracefully');
+  process.exit(0);
+});
+
+// Uncaught exception handler
 process.on('uncaughtException', (err) => {
   logger.error('Uncaught Exception:', {
     error: err.message,
     stack: err.stack
   });
   
-  // Don't exit the process, just log the error
-  // This is a temporary fix to keep the server running despite errors
+  // Exit the process for uncaught exceptions in production
+  if (isProd) {
+    process.exit(1);
+  }
+});
+
+logger.info('SWAPS White Label API initialized', {
+  environment: isProd ? 'production' : 'development',
+  corsOrigins: isProd ? corsOrigins.length : 'development (all origins allowed)',
+  routes: ['/api/v1', '/health']
 });
 
 export default app; 

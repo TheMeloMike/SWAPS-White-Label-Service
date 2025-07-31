@@ -1,134 +1,159 @@
 /**
- * Dependency Injection Container Setup
+ * Dependency Injection Container Setup - White Label API
  * 
- * This file sets up the DI container and registers all service implementations.
- * It centralizes all dependency registrations to make them easy to manage.
+ * This file sets up the DI container for the SWAPS White Label API.
+ * Only registers services needed for the white label B2B platform.
  */
 
 import "reflect-metadata"; // Required for tsyringe
 import { container } from "tsyringe";
-import { Helius } from 'helius-sdk';
 
-// Interfaces
-import { 
-  ILoggingService, 
-  INFTService, 
-  INFTPricingService,
-  IWalletService,
-  ITradeDiscoveryService,
-  IPersistenceManager,
-  ICacheService
-} from './types/services';
-
-// Service implementations
+// Core services that exist
 import { LoggingService } from './utils/logging/LoggingService';
+import { TradeDiscoveryService } from './services/trade/TradeDiscoveryService';
+import { PersistentTradeDiscoveryService } from './services/trade/PersistentTradeDiscoveryService';
+import { TenantManagementService } from './services/tenant/TenantManagementService';
+
+// Restored essential services
 import { NFTService } from './services/nft/NFTService';
 import { NFTPricingService } from './services/nft/NFTPricingService';
-import { WalletService } from './services/trade/WalletService';
-import { TradeDiscoveryService } from './services/trade/TradeDiscoveryService';
-import { RedisPersistenceManager } from './lib/persistence/RedisPersistenceManager';
-import { FilePersistenceManager } from './lib/persistence/FilePersistenceManager';
-import { TrendingService } from './services/TrendingService';
-import { TrendingController } from './controllers/TrendingController';
-import { GlobalCacheService } from './services/cache/GlobalCacheService';
-import { CollectionAbstractionService } from './services/trade/CollectionAbstractionService';
-import { CollectionIndexingService } from './services/nft/CollectionIndexingService';
-import { DynamicValuationService } from './services/trade/DynamicValuationService';
-import { TradeLoopFinderService } from './services/trade/TradeLoopFinderService';
-import { ScalableTradeLoopFinderService } from './services/trade/ScalableTradeLoopFinderService';
-import { GraphPartitioningService } from './services/trade/GraphPartitioningService';
-import { TradeScoreService } from './services/trade/TradeScoreService';
-import { BundleTradeLoopFinderService } from './services/trade/BundleTradeLoopFinderService';
-import { SCCFinderService } from './services/trade/SCCFinderService';
-import { CycleFinderService } from './services/trade/CycleFinderService';
 import { LocalCollectionService } from './services/nft/LocalCollectionService';
-import { CollectionConfigService } from './services/trade/CollectionConfigService';
 import { DataSyncService } from './services/data/DataSyncService';
 
+// Check if these services exist before importing
+let UniversalNFTIngestionService: any;
+let WebhookNotificationService: any;
+let ProductionMonitorService: any;
+let AlgorithmRegressionTestSuite: any;
+
+try {
+  UniversalNFTIngestionService = require('./services/ingestion/UniversalNFTIngestionService').UniversalNFTIngestionService;
+} catch (error) {
+  console.log('[DI-Container] UniversalNFTIngestionService not available');
+}
+
+try {
+  WebhookNotificationService = require('./services/notifications/WebhookNotificationService').WebhookNotificationService;
+} catch (error) {
+  console.log('[DI-Container] WebhookNotificationService not available');
+}
+
+try {
+  ProductionMonitorService = require('./services/monitoring/ProductionMonitorService').ProductionMonitorService;
+} catch (error) {
+  console.log('[DI-Container] ProductionMonitorService not available');
+}
+
+try {
+  AlgorithmRegressionTestSuite = require('./services/validation/AlgorithmRegressionTestSuite').AlgorithmRegressionTestSuite;
+} catch (error) {
+  console.log('[DI-Container] AlgorithmRegressionTestSuite not available');
+}
+
+// Persistence
+import { FilePersistenceManager } from './lib/persistence/FilePersistenceManager';
+
 /**
- * Register all services with the DI container
+ * Register white label services with the DI container
  */
 export function registerServices(): void {
-  // Register DataSyncService first as it's needed by other services
-  container.registerSingleton<DataSyncService>("DataSyncService", DataSyncService);
+  console.log('[DI-Container] Registering white label services...');
 
-  // Register external dependencies
-  container.register<Helius>("Helius", {
-    useFactory: () => {
-      const apiKey = process.env.HELIUS_API_KEY;
-      if (!apiKey) {
-        throw new Error('HELIUS_API_KEY environment variable is required');
-      }
-      return new Helius(apiKey);
-    }
-  });
-
-  // Register service implementations
-  container.register<ILoggingService>("ILoggingService", { 
-    useClass: LoggingService 
-  });
-  
-  // Register NFTService and NFTPricingService as singletons if applicable
-  container.registerSingleton<INFTService>("INFTService", NFTService);
-  container.registerSingleton<INFTPricingService>("INFTPricingService", NFTPricingService);
-
-  // Register WalletService normally (assuming it's not strictly a singleton)
-  container.register("IWalletService", { 
-    useClass: WalletService 
-  });
-  
-  // FIXED: Use getInstance pattern but with proper error handling
   try {
-    const tradeDiscoveryServiceInstance = TradeDiscoveryService.getInstance();
-    if (!tradeDiscoveryServiceInstance) {
-      throw new Error("TradeDiscoveryService.getInstance() returned null/undefined");
-    }
-    container.register("ITradeDiscoveryService", {
-      useFactory: () => tradeDiscoveryServiceInstance
+    // Core logging service
+    container.registerSingleton("LoggingService", LoggingService);
+    console.log('[DI-Container] ✅ LoggingService registered');
+
+    // Core trade discovery service (uses singleton pattern)
+    const tradeDiscoveryService = TradeDiscoveryService.getInstance();
+    container.register("TradeDiscoveryService", {
+      useFactory: () => tradeDiscoveryService
     });
-    console.log('[DI-Container] TradeDiscoveryService registered successfully');
+    console.log('[DI-Container] ✅ TradeDiscoveryService registered');
+
+    // Restored essential services - use getInstance for singleton services
+    const nftService = NFTService.getInstance();
+    container.register("NFTService", {
+      useFactory: () => nftService
+    });
+    console.log('[DI-Container] ✅ NFTService registered');
+
+    const nftPricingService = NFTPricingService.getInstance();
+    container.register("NFTPricingService", {
+      useFactory: () => nftPricingService
+    });
+    console.log('[DI-Container] ✅ NFTPricingService registered');
+
+    // LocalCollectionService uses singleton pattern
+    const localCollectionService = LocalCollectionService.getInstance();
+    container.register("LocalCollectionService", {
+      useFactory: () => localCollectionService
+    });
+    console.log('[DI-Container] ✅ LocalCollectionService registered');
+
+    container.registerSingleton("DataSyncService", DataSyncService);
+    console.log('[DI-Container] ✅ DataSyncService registered');
+
+    // Persistent trade discovery service (singleton pattern)
+    if (PersistentTradeDiscoveryService) {
+      const persistentTradeService = PersistentTradeDiscoveryService.getInstance();
+      container.register("PersistentTradeDiscoveryService", {
+        useFactory: () => persistentTradeService
+      });
+      console.log('[DI-Container] ✅ PersistentTradeDiscoveryService registered');
+    }
+
+    // Tenant management service (singleton pattern)
+    if (TenantManagementService) {
+      const tenantService = TenantManagementService.getInstance();
+      container.register("TenantManagementService", {
+        useFactory: () => tenantService
+      });
+      console.log('[DI-Container] ✅ TenantManagementService registered');
+    }
+
+    // Optional services (if they exist)
+    if (UniversalNFTIngestionService) {
+      const ingestionService = UniversalNFTIngestionService.getInstance();
+      container.register("UniversalNFTIngestionService", {
+        useFactory: () => ingestionService
+      });
+      console.log('[DI-Container] ✅ UniversalNFTIngestionService registered');
+    }
+
+    if (WebhookNotificationService) {
+      const webhookService = WebhookNotificationService.getInstance();
+      container.register("WebhookNotificationService", {
+        useFactory: () => webhookService
+      });
+      console.log('[DI-Container] ✅ WebhookNotificationService registered');
+    }
+
+    if (ProductionMonitorService) {
+      const monitorService = ProductionMonitorService.getInstance();
+      container.register("ProductionMonitorService", {
+        useFactory: () => monitorService
+      });
+      console.log('[DI-Container] ✅ ProductionMonitorService registered');
+    }
+
+    if (AlgorithmRegressionTestSuite) {
+      const regressionSuite = AlgorithmRegressionTestSuite.getInstance();
+      container.register("AlgorithmRegressionTestSuite", {
+        useFactory: () => regressionSuite
+      });
+      console.log('[DI-Container] ✅ AlgorithmRegressionTestSuite registered');
+    }
+
+    // File persistence (fallback for data storage)
+    container.registerSingleton("FilePersistenceManager", FilePersistenceManager);
+    console.log('[DI-Container] ✅ FilePersistenceManager registered');
+
+    console.log('[DI-Container] ✅ All available white label services registered successfully');
   } catch (error) {
-    console.error('[DI-Container CRITICAL] Failed to register TradeDiscoveryService:', error);
+    console.error('[DI-Container CRITICAL] Failed to register services:', error);
     throw error; // Fail fast - critical registration failure
   }
-  
-  // Register PersistenceManager as a singleton based on environment
-  if (process.env.USE_REDIS === 'true') {
-    container.registerSingleton<IPersistenceManager>("IPersistenceManager", RedisPersistenceManager);
-  } else {
-    container.registerSingleton<IPersistenceManager>("IPersistenceManager", FilePersistenceManager);
-  }
-
-  // Register Cache Service
-  container.registerSingleton<ICacheService>("ICacheService", GlobalCacheService);
-
-  // Register new services and controllers
-  container.registerSingleton<TrendingService>(TrendingService, TrendingService);
-  container.registerSingleton<TrendingController>(TrendingController, TrendingController);
-
-  // Register CollectionAbstractionService
-  container.register("CollectionAbstractionService", {
-    useFactory: () => CollectionAbstractionService.getInstance()
-  });
-
-  // Register LocalCollectionService
-  container.register("LocalCollectionService", {
-    useFactory: () => LocalCollectionService.getInstance()
-  });
-
-  // Register CollectionConfigService
-  container.register("CollectionConfigService", {
-    useFactory: () => CollectionConfigService.getInstance()
-  });
-
-  // Note: Collection and trade services use getInstance() singleton pattern
-  // and cannot be registered with DI container due to private constructors.
-  // They are accessed directly via:
-  // - CollectionIndexingService.getInstance()
-  // - CollectionAbstractionService.getInstance()
-  // - DynamicValuationService.getInstance()
-  // - ScalableTradeLoopFinderService.getInstance()
-  // - Other singleton pattern services
 }
 
 /**
@@ -136,6 +161,14 @@ export function registerServices(): void {
  */
 export function resetContainer(): void {
   container.reset();
+  console.log('[DI-Container] Container reset');
+}
+
+/**
+ * Get a service from the container
+ */
+export function getService<T>(token: string): T {
+  return container.resolve<T>(token);
 }
 
 // Export the container for direct access when needed

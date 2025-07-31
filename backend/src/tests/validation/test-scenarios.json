@@ -1,0 +1,483 @@
+{
+  "scenarios": [
+    {
+      "scenarioId": "bilateral_trade",
+      "description": "Simple 2-party direct trade",
+      "complexity": "simple",
+      "wallets": [
+        {
+          "address": "wallet_a", 
+          "ownedNfts": ["nft_1"],
+          "wantedNfts": ["nft_2"],
+          "lastUpdated": "2025-01-30T00:00:00Z"
+        },
+        {
+          "address": "wallet_b",
+          "ownedNfts": ["nft_2"], 
+          "wantedNfts": ["nft_1"],
+          "lastUpdated": "2025-01-30T00:00:00Z"
+        }
+      ],
+      "abstractWallets": [
+        {
+          "id": "wallet_a",
+          "ownedNFTs": [
+            {
+              "id": "nft_1",
+              "name": "Test NFT 1",
+              "image": "https://example.com/nft1.png",
+              "ownership": {
+                "ownerId": "wallet_a",
+                "blockchain": "ethereum",
+                "verified": true
+              },
+              "metadata": {
+                "collection": "test_collection",
+                "attributes": [],
+                "rarity": 0.5
+              },
+              "pricing": {
+                "lastKnownPrice": 1.0,
+                "currency": "ETH",
+                "source": "opensea"
+              }
+            }
+          ],
+          "wantedNFTs": ["nft_2"],
+          "preferences": {}
+        },
+        {
+          "id": "wallet_b", 
+          "ownedNFTs": [
+            {
+              "id": "nft_2",
+              "name": "Test NFT 2",
+              "image": "https://example.com/nft2.png", 
+              "ownership": {
+                "ownerId": "wallet_b",
+                "blockchain": "ethereum",
+                "verified": true
+              },
+              "metadata": {
+                "collection": "test_collection",
+                "attributes": [],
+                "rarity": 0.5
+              },
+              "pricing": {
+                "lastKnownPrice": 1.0,
+                "currency": "ETH",
+                "source": "opensea"
+              }
+            }
+          ],
+          "wantedNFTs": ["nft_1"],
+          "preferences": {}
+        }
+      ],
+      "expectedResults": {
+        "minLoops": 1,
+        "maxLoops": 1,
+        "topScoreThreshold": 0.8
+      },
+      "algorithmExpectations": {
+        "johnson": {
+          "expectedLoopCount": 1,
+          "expectedTopScore": 0.9,
+          "maxExecutionTimeMs": 1000,
+          "mustFindDirectTrades": true
+        },
+        "scalable": {
+          "expectedLoopCount": 1,
+          "expectedTopScore": 0.9,
+          "maxExecutionTimeMs": 1000,
+          "mustFindDirectTrades": true
+        }
+      }
+    },
+    {
+      "scenarioId": "triangular_trade",
+      "description": "3-party circular trade",
+      "complexity": "moderate",
+      "wallets": [
+        {
+          "address": "wallet_a",
+          "ownedNfts": ["nft_1"],
+          "wantedNfts": ["nft_3"],
+          "lastUpdated": "2025-01-30T00:00:00Z"
+        },
+        {
+          "address": "wallet_b", 
+          "ownedNfts": ["nft_2"],
+          "wantedNfts": ["nft_1"],
+          "lastUpdated": "2025-01-30T00:00:00Z"
+        },
+        {
+          "address": "wallet_c",
+          "ownedNfts": ["nft_3"],
+          "wantedNfts": ["nft_2"],
+          "lastUpdated": "2025-01-30T00:00:00Z"
+        }
+      ],
+      "abstractWallets": [
+        {
+          "id": "wallet_a",
+          "ownedNFTs": [
+            {
+              "id": "nft_1",
+              "name": "Test NFT 1",
+              "image": "https://example.com/nft1.png",
+              "ownership": {
+                "ownerId": "wallet_a",
+                "blockchain": "ethereum", 
+                "verified": true
+              },
+              "metadata": {
+                "collection": "test_collection",
+                "attributes": [],
+                "rarity": 0.5
+              },
+              "pricing": {
+                "lastKnownPrice": 1.0,
+                "currency": "ETH",
+                "source": "opensea"
+              }
+            }
+          ],
+          "wantedNFTs": ["nft_3"],
+          "preferences": {}
+        },
+        {
+          "id": "wallet_b",
+          "ownedNFTs": [
+            {
+              "id": "nft_2",
+              "name": "Test NFT 2", 
+              "image": "https://example.com/nft2.png",
+              "ownership": {
+                "ownerId": "wallet_b",
+                "blockchain": "ethereum",
+                "verified": true
+              },
+              "metadata": {
+                "collection": "test_collection",
+                "attributes": [],
+                "rarity": 0.5
+              },
+              "pricing": {
+                "lastKnownPrice": 1.0,
+                "currency": "ETH",
+                "source": "opensea"
+              }
+            }
+          ],
+          "wantedNFTs": ["nft_1"], 
+          "preferences": {}
+        },
+        {
+          "id": "wallet_c",
+          "ownedNFTs": [
+            {
+              "id": "nft_3",
+              "name": "Test NFT 3",
+              "image": "https://example.com/nft3.png",
+              "ownership": {
+                "ownerId": "wallet_c",
+                "blockchain": "ethereum",
+                "verified": true
+              },
+              "metadata": {
+                "collection": "test_collection",
+                "attributes": [],
+                "rarity": 0.5
+              },
+              "pricing": {
+                "lastKnownPrice": 1.0, 
+                "currency": "ETH",
+                "source": "opensea"
+              }
+            }
+          ],
+          "wantedNFTs": ["nft_2"],
+          "preferences": {}
+        }
+      ],
+      "expectedResults": {
+        "minLoops": 1,
+        "maxLoops": 1,
+        "topScoreThreshold": 0.75
+      },
+      "algorithmExpectations": {
+        "johnson": {
+          "expectedLoopCount": 1,
+          "expectedTopScore": 0.85,
+          "maxExecutionTimeMs": 2000,
+          "requiredParticipants": [3]
+        },
+        "scalable": {
+          "expectedLoopCount": 1,
+          "expectedTopScore": 0.85,
+          "maxExecutionTimeMs": 2000,
+          "requiredParticipants": [3]
+        }
+      }
+    },
+    {
+      "scenarioId": "complex_5_party",
+      "description": "5-party complex trade with multiple loops",
+      "complexity": "complex",
+      "wallets": [
+        {
+          "address": "wallet_a",
+          "ownedNfts": ["nft_1", "nft_6"],
+          "wantedNfts": ["nft_5"],
+          "lastUpdated": "2025-01-30T00:00:00Z"
+        },
+        {
+          "address": "wallet_b",
+          "ownedNfts": ["nft_2"],
+          "wantedNfts": ["nft_1"],
+          "lastUpdated": "2025-01-30T00:00:00Z"
+        },
+        {
+          "address": "wallet_c",
+          "ownedNfts": ["nft_3"],
+          "wantedNfts": ["nft_2"],
+          "lastUpdated": "2025-01-30T00:00:00Z"
+        },
+        {
+          "address": "wallet_d",
+          "ownedNfts": ["nft_4"],
+          "wantedNfts": ["nft_3"],
+          "lastUpdated": "2025-01-30T00:00:00Z"
+        },
+        {
+          "address": "wallet_e",
+          "ownedNfts": ["nft_5"],
+          "wantedNfts": ["nft_4", "nft_6"],
+          "lastUpdated": "2025-01-30T00:00:00Z"
+        }
+      ],
+      "abstractWallets": [
+        {
+          "id": "wallet_a",
+          "ownedNFTs": [
+            {
+              "id": "nft_1",
+              "name": "Test NFT 1",
+              "image": "https://example.com/nft1.png",
+              "ownership": {
+                "ownerId": "wallet_a",
+                "blockchain": "ethereum",
+                "verified": true
+              },
+              "metadata": {
+                "collection": "collection_a",
+                "attributes": [],
+                "rarity": 0.3
+              },
+              "pricing": {
+                "lastKnownPrice": 2.0,
+                "currency": "ETH",
+                "source": "opensea"
+              }
+            },
+            {
+              "id": "nft_6",
+              "name": "Test NFT 6",
+              "image": "https://example.com/nft6.png",
+              "ownership": {
+                "ownerId": "wallet_a",
+                "blockchain": "ethereum",
+                "verified": true
+              },
+              "metadata": {
+                "collection": "collection_b",
+                "attributes": [],
+                "rarity": 0.8
+              },
+              "pricing": {
+                "lastKnownPrice": 0.5,
+                "currency": "ETH",
+                "source": "opensea"
+              }
+            }
+          ],
+          "wantedNFTs": ["nft_5"],
+          "preferences": {}
+        },
+        {
+          "id": "wallet_b",
+          "ownedNFTs": [
+            {
+              "id": "nft_2",
+              "name": "Test NFT 2",
+              "image": "https://example.com/nft2.png",
+              "ownership": {
+                "ownerId": "wallet_b",
+                "blockchain": "ethereum",
+                "verified": true
+              },
+              "metadata": {
+                "collection": "collection_a",
+                "attributes": [],
+                "rarity": 0.4
+              },
+              "pricing": {
+                "lastKnownPrice": 1.8,
+                "currency": "ETH",
+                "source": "opensea"
+              }
+            }
+          ],
+          "wantedNFTs": ["nft_1"],
+          "preferences": {}
+        },
+        {
+          "id": "wallet_c",
+          "ownedNFTs": [
+            {
+              "id": "nft_3",
+              "name": "Test NFT 3",
+              "image": "https://example.com/nft3.png",
+              "ownership": {
+                "ownerId": "wallet_c",
+                "blockchain": "ethereum",
+                "verified": true
+              },
+              "metadata": {
+                "collection": "collection_a",
+                "attributes": [],
+                "rarity": 0.6
+              },
+              "pricing": {
+                "lastKnownPrice": 1.5,
+                "currency": "ETH",
+                "source": "opensea"
+              }
+            }
+          ],
+          "wantedNFTs": ["nft_2"],
+          "preferences": {}
+        },
+        {
+          "id": "wallet_d",
+          "ownedNFTs": [
+            {
+              "id": "nft_4",
+              "name": "Test NFT 4",
+              "image": "https://example.com/nft4.png",
+              "ownership": {
+                "ownerId": "wallet_d",
+                "blockchain": "ethereum",
+                "verified": true
+              },
+              "metadata": {
+                "collection": "collection_a",
+                "attributes": [],
+                "rarity": 0.7
+              },
+              "pricing": {
+                "lastKnownPrice": 1.2,
+                "currency": "ETH",
+                "source": "opensea"
+              }
+            }
+          ],
+          "wantedNFTs": ["nft_3"],
+          "preferences": {}
+        },
+        {
+          "id": "wallet_e",
+          "ownedNFTs": [
+            {
+              "id": "nft_5",
+              "name": "Test NFT 5",
+              "image": "https://example.com/nft5.png",
+              "ownership": {
+                "ownerId": "wallet_e",
+                "blockchain": "ethereum",
+                "verified": true
+              },
+              "metadata": {
+                "collection": "collection_c",
+                "attributes": [],
+                "rarity": 0.2
+              },
+              "pricing": {
+                "lastKnownPrice": 3.0,
+                "currency": "ETH",
+                "source": "opensea"
+              }
+            }
+          ],
+          "wantedNFTs": ["nft_4", "nft_6"],
+          "preferences": {}
+        }
+      ],
+      "expectedResults": {
+        "minLoops": 1,
+        "maxLoops": 3,
+        "topScoreThreshold": 0.7
+      },
+      "algorithmExpectations": {
+        "johnson": {
+          "expectedLoopCount": 2,
+          "expectedTopScore": 0.8,
+          "maxExecutionTimeMs": 5000,
+          "requiredParticipants": [5, 2]
+        },
+        "scalable": {
+          "expectedLoopCount": 2,
+          "expectedTopScore": 0.8,
+          "maxExecutionTimeMs": 3000,
+          "requiredParticipants": [5, 2]
+        }
+      }
+    }
+  ],
+  "goldenFiles": [],
+  "baselines": [
+    {
+      "algorithm": "johnson",
+      "scenario": "bilateral_trade",
+      "baseline": {
+        "averageTimeMs": 50,
+        "memoryUsageMB": 10,
+        "loopsFound": 1,
+        "averageScore": 0.9,
+        "timestamp": "2025-01-30T00:00:00Z"
+      },
+      "thresholds": {
+        "maxTimeMs": 100,
+        "maxMemoryMB": 20,
+        "minLoopsFound": 1,
+        "minAverageScore": 0.8
+      }
+    },
+    {
+      "algorithm": "scalable",
+      "scenario": "complex_5_party",
+      "baseline": {
+        "averageTimeMs": 200,
+        "memoryUsageMB": 50,
+        "loopsFound": 2,
+        "averageScore": 0.8,
+        "timestamp": "2025-01-30T00:00:00Z"
+      },
+      "thresholds": {
+        "maxTimeMs": 400,
+        "maxMemoryMB": 100,
+        "minLoopsFound": 1,
+        "minAverageScore": 0.7
+      }
+    }
+  ],
+  "settings": {
+    "timeoutMs": 30000,
+    "maxConcurrentTests": 3,
+    "enablePerformanceTests": true,
+    "enableGoldenFileTests": false,
+    "scoreTolerancePercent": 2.0,
+    "enableDetailedLogging": true
+  }
+} 

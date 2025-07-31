@@ -21,6 +21,7 @@
     "bs58": "^6.0.0",
     "chalk": "^5.4.1",
     "got": "^11.8.6",
+    "jest": "^30.0.5",
     "pg-promise": "^11.13.0",
     "reflect-metadata": "^0.2.2",
     "tsyringe": "^4.9.1",
@@ -28,7 +29,8 @@
   },
   "devDependencies": {
     "@types/node-fetch": "^2.6.12",
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+    "ts-node": "^10.9.2"
   },
   "main": "generate-mock-data.js",
   "keywords": [],
