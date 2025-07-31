@@ -578,10 +578,40 @@ export class PersistentTradeDiscoveryService extends EventEmitter {
   public getMetrics() {
     return {
       ...this.performanceMetrics,
-      deltaEngineMetrics: this.deltaEngine.getMetrics(),
       activeTenants: this.tenantGraphs.size,
-      totalActiveLoops: Array.from(this.tenantGraphs.values())
-        .reduce((sum, graph) => sum + graph.activeLoops.size, 0)
+      totalActiveLoops: Array.from(this.tenantGraphs.values()).reduce(
+        (total, graph) => total + graph.activeLoops.size, 
+        0
+      )
     };
+  }
+
+  /**
+   * PUBLIC: Get active loops for a tenant
+   * This fixes the discovery endpoint bug where private getTenantGraph couldn't be accessed
+   */
+  public getActiveLoopsForTenant(tenantId: string): TradeLoop[] {
+    try {
+      const graph = this.getTenantGraph(tenantId);
+      return Array.from(graph.activeLoops.values());
+    } catch (error) {
+      this.logger.warn('Failed to get active loops for tenant', {
+        tenantId,
+        error: error instanceof Error ? error.message : String(error)
+      });
+      return [];
+    }
+  }
+
+  /**
+   * PUBLIC: Get active loop count for a tenant
+   */
+  public getActiveLoopCountForTenant(tenantId: string): number {
+    try {
+      const graph = this.getTenantGraph(tenantId);
+      return graph.activeLoops.size;
+    } catch (error) {
+      return 0;
+    }
   }
 } 

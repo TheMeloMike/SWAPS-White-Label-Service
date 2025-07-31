@@ -97,8 +97,7 @@ export class WhiteLabelController {
         );
       } else {
         // Get all active trades for tenant
-        const graph = this.persistentTradeService['getTenantGraph'](tenant.id);
-        discoveredTrades = Array.from(graph.activeLoops.values());
+        discoveredTrades = this.persistentTradeService.getActiveLoopsForTenant(tenant.id);
       }
 
       // Apply result limits
@@ -116,7 +115,7 @@ export class WhiteLabelController {
         trades: discoveredTrades,
         mode,
         metadata: {
-          totalActiveLoops: await this.persistentTradeService.getActiveLoopCount(tenant.id),
+          totalActiveLoops: this.persistentTradeService.getActiveLoopCountForTenant(tenant.id),
           requestProcessingTime: Date.now() - startTime,
           tenantId: tenant.id
         }
@@ -348,8 +347,7 @@ export class WhiteLabelController {
         );
       } else {
         // Get all active trades for tenant
-        const graph = this.persistentTradeService['getTenantGraph'](tenant.id);
-        trades = Array.from(graph.activeLoops.values());
+        trades = this.persistentTradeService.getActiveLoopsForTenant(tenant.id);
       }
 
       // Apply limit

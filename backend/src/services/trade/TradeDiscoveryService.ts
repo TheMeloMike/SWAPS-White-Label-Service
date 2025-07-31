@@ -502,27 +502,26 @@ export class TradeDiscoveryService implements ITradeDiscoveryService {
     let strategiesAttempted = 0;
     let strategiesSucceeded = 0;
     
+    // WHITE LABEL FIX: Use single strategy to prevent massive duplication
+    // Instead of accumulating results from multiple strategies, use the first successful one
     for (const strategy of strategies) {
       strategiesAttempted++;
       try {
         operation.info(`Attempting to find trades with ${strategy.name} implementation`);
         const strategyTrades = await strategy.findAllTradeLoops();
         
-        // Add to partial results regardless of count
-        partialResults.push(...strategyTrades);
-        
-        // If this strategy returned results, consider it successful
+        // If this strategy returned results, use ONLY these results
         if (strategyTrades.length > 0) {
           strategiesSucceeded++;
-          allTrades.push(...strategyTrades);
-          operation.info(`${strategy.name} implementation found ${strategyTrades.length} trades`);
+          allTrades = strategyTrades; // FIXED: Use assignment, not push to prevent accumulation
+          operation.info(`${strategy.name} implementation found ${strategyTrades.length} trades - using exclusively`);
           
-          // Only break if we have enough trades or this is the preferred strategy
-          if (allTrades.length >= (mergedSettings.maxResults || 100) || strategy.name === 'bundle') {
-            break;
-          }
+          // Always break after first successful strategy to prevent duplication
+          break;
         } else {
           operation.warn(`${strategy.name} implementation found 0 trades, trying next implementation`);
+          // Store partial results as fallback
+          partialResults.push(...strategyTrades);
         }
       } catch (error) {
         lastError = error;
@@ -1890,6 +1889,27 @@ export class TradeDiscoveryService implements ITradeDiscoveryService {
           // Continue to next strategy
         }
       }
+      
+      // If no strategies succeeded, log comprehensive error
+      if (calculatedTrades.length === 0 && strategies.length > 0) {
+        operation.error('All implementations failed to find trades', { 
+          strategiesAttempted: strategies.length,
+          strategiesSucceeded: 0,
+          partialResultsCount: 0,
+          lastError: 'No trades found'
+        });
+        
+        // Return empty array but don't throw - graceful degradation
+        operation.end();
+        return [];
+      }
+
+      operation.info(`Found trades for wallet`, { 
+        wallet: walletAddress,
+        tradesFound: calculatedTrades.length, // This should be calculatedTrades.length before any further slicing if it were to happen here
+        fromStorage: storedTrades.length,
+        fromCalculation: calculatedTrades.length
+      });
       
       // STEP 3: Combine stored and calculated trades, eliminating duplicates
       let combinedTrades: TradeLoop[] = [...storedTrades];
