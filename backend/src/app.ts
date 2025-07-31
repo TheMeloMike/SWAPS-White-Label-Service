@@ -55,12 +55,29 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
 }));
 
+// Special CORS bypass for static files (favicon, etc.)
+app.use('/favicon.ico', cors());
+app.use('/*.ico', cors());
+
 // Parse JSON request bodies (generous limit for NFT metadata)
 app.use(express.json({ limit: '10mb' }));
 
 // API Routes
 app.use('/api/v1', whiteLabelApiRoutes);
 app.use('/health', healthRoutes);
+
+// Favicon route - serve a simple SWAPS favicon
+app.get('/favicon.ico', (req, res) => {
+  // Serve a simple SVG favicon with SWAPS branding
+  const favicon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+    <circle cx="50" cy="50" r="45" fill="#1a1a2e"/>
+    <text x="50" y="60" font-size="40" text-anchor="middle" fill="#0ff">🔄</text>
+  </svg>`;
+  
+  res.setHeader('Content-Type', 'image/svg+xml');
+  res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache for 1 day
+  res.send(favicon);
+});
 
 // Root endpoint
 app.get('/', (req, res) => {
@@ -71,8 +88,9 @@ app.get('/', (req, res) => {
     endpoints: {
       api: '/api/v1',
       health: '/health',
-      documentation: 'https://docs.swaps.com/api'
+      documentation: 'https://desert-adjustment-111.notion.site/SWAPS-White-Label-Documentation-2409b1fc08278068a469c60e33a105d8'
     },
+    message: '🔄 SWAPS: Where NFTs find their perfect match',
     timestamp: new Date().toISOString()
   });
 });
@@ -83,7 +101,7 @@ app.use((req, res) => {
     error: 'Not Found',
     message: `Cannot ${req.method} ${req.path}`,
     availableEndpoints: ['/api/v1', '/health'],
-    documentation: 'https://docs.swaps.com/api'
+    documentation: 'https://desert-adjustment-111.notion.site/SWAPS-White-Label-Documentation-2409b1fc08278068a469c60e33a105d8'
   });
 });
 
