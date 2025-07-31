@@ -34,10 +34,23 @@ export class TenantAuthMiddleware {
     const operation = this.logger.operation('authenticateRequest');
     
     try {
-      // Extract API key from Authorization header
-      const authHeader = req.headers.authorization;
-      if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        operation.warn('Missing or invalid authorization header', {
+      // Extract API key from either X-API-Key header (preferred) or Authorization header (legacy)
+      let apiKey: string | undefined;
+      
+      // Try X-API-Key header first (documented format)
+      const xApiKey = req.headers['x-api-key'] as string;
+      if (xApiKey) {
+        apiKey = xApiKey;
+      } else {
+        // Fallback to Authorization Bearer format
+        const authHeader = req.headers.authorization;
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+          apiKey = authHeader.substring(7); // Remove 'Bearer ' prefix
+        }
+      }
+      
+      if (!apiKey) {
+        operation.warn('Missing API key', {
           path: req.path,
           method: req.method,
           ip: req.ip
@@ -45,13 +58,11 @@ export class TenantAuthMiddleware {
         
         res.status(401).json({
           error: 'Unauthorized',
-          message: 'API key required. Use Authorization: Bearer <api_key>'
+          message: 'API key required. Use X-API-Key header or Authorization: Bearer <api_key>'
         });
         operation.end();
         return;
       }
-
-      const apiKey = authHeader.substring(7); // Remove 'Bearer ' prefix
       
       // Validate API key format
       if (!apiKey || !apiKey.startsWith('swaps_') || apiKey.length < 20) {
