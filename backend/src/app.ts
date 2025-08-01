@@ -20,6 +20,7 @@ try {
 import whiteLabelApiRoutes from './routes/whiteLabelApi.routes';
 import healthRoutes from './routes/health.routes';
 import docsRoutes from './routes/docs.routes';
+import { ErrorHandler } from './middleware/errorHandler';
 
 const logger = LoggingService.getInstance().createLogger('WhiteLabelApp');
 const app = express();
@@ -63,6 +64,9 @@ app.use('/*.ico', cors());
 // Parse JSON request bodies (generous limit for NFT metadata)
 app.use(express.json({ limit: '10mb' }));
 
+// Add request tracking for error handling
+app.use(ErrorHandler.addRequestTracking);
+
 // API Routes
 app.use('/api/v1', whiteLabelApiRoutes);
 app.use('/health', healthRoutes);
@@ -97,33 +101,11 @@ app.get('/', (req, res) => {
   });
 });
 
-// 404 handler
-app.use((req, res) => {
-  res.status(404).json({
-    error: 'Not Found',
-    message: `Cannot ${req.method} ${req.path}`,
-    availableEndpoints: ['/api/v1', '/health'],
-    documentation: 'https://desert-adjustment-111.notion.site/SWAPS-White-Label-Documentation-2409b1fc08278068a469c60e33a105d8'
-  });
-});
+// 404 handler - use standardized error handling
+app.use(ErrorHandler.handle404);
 
-// Error handling middleware
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  logger.error('API Error:', {
-    path: req.path,
-    method: req.method,
-    error: err.message || 'Unknown error',
-    stack: isProd ? undefined : err.stack
-  });
-
-  const statusCode = err.statusCode || err.status || 500;
-  
-  res.status(statusCode).json({
-    error: err.message || 'Internal server error',
-    code: err.code || 'INTERNAL_ERROR',
-    timestamp: new Date().toISOString()
-  });
-});
+// Global error handling middleware
+app.use(ErrorHandler.handle);
 
 // Graceful shutdown handlers
 process.on('SIGTERM', () => {
