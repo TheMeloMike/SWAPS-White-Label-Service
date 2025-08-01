@@ -235,10 +235,10 @@ export class AlgorithmConsolidationService extends EventEmitter {
         enableBundleDetection: true,
         canonicalOnly: true,
         
-        // Advanced optimizations
+        // Advanced optimizations (PRESERVE ALL SOPHISTICATED ALGORITHMS)
         enableLouvainClustering: wallets.size > 10,
         enableBloomFilters: wallets.size > 20,
-        enableKafkaDistribution: false, // Disable for reliability
+        enableKafkaDistribution: wallets.size > 50, // Enable for large scale (like existing system)
         enableParallelProcessing: wallets.size > 5,
         maxCommunitySize: 50,
         bloomFilterCapacity: Math.max(1000, wallets.size * 100),

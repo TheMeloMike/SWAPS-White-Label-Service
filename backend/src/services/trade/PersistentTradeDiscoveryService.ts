@@ -773,9 +773,9 @@ export class PersistentTradeDiscoveryService extends EventEmitter {
   ): Promise<TradeLoop[]> {
     const operation = this.logger.operation('executeLegacyDiscovery');
     
-    operation.info('Using legacy trade discovery system', { tenantId });
+    operation.warn('Using deprecated legacy trade discovery system - should use AlgorithmConsolidationService', { tenantId });
     
-    // Use the existing synchronized base service
+    // Use the existing synchronized base service (DEPRECATED)
     const discoveredLoops = await this.baseTradeService.findTradeLoops(settings);
     
     operation.info('Legacy discovery completed', {
