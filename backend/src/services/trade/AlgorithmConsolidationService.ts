@@ -104,7 +104,7 @@ export class AlgorithmConsolidationService extends EventEmitter {
     
     // Initialize configuration from environment
     this.config = {
-      useCanonicalEngine: process.env.ENABLE_CANONICAL_ENGINE !== 'false' // Enterprise: default enabled,
+      useCanonicalEngine: process.env.ENABLE_CANONICAL_ENGINE !== 'false', // Enterprise: default enabled
       enableLegacyFallback: process.env.ENABLE_LEGACY_FALLBACK !== 'false',
       enablePerformanceComparison: process.env.ENABLE_PERFORMANCE_COMPARISON === 'true',
       canonicalEnginePercentage: parseInt(process.env.CANONICAL_ENGINE_PERCENTAGE || '100'),
