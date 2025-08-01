@@ -22,9 +22,13 @@ import healthRoutes from './routes/health.routes';
 import docsRoutes from './routes/docs.routes';
 import monitoringRoutes, { trackRequests } from './routes/monitoring.routes';
 import { ErrorHandler } from './middleware/errorHandler';
+import { detectApiVersion, configureEnterpriseVersioning } from './middleware/apiVersioning';
 
-const logger = LoggingService.getInstance().createLogger('WhiteLabelApp');
-const app = express();
+  const logger = LoggingService.getInstance().createLogger('WhiteLabelApp');
+  const app = express();
+
+  // Configure enterprise API versioning
+  configureEnterpriseVersioning();
 
 // CORS configuration for API service
 const isProd = process.env.NODE_ENV === 'production';
@@ -68,6 +72,9 @@ app.use(express.json({ limit: '10mb' }));
 // Add request tracking for error handling and monitoring
 app.use(ErrorHandler.addRequestTracking);
 app.use(trackRequests);
+
+// Add API versioning detection
+app.use('/api', detectApiVersion);
 
 // API Routes
 app.use('/api/v1', whiteLabelApiRoutes);

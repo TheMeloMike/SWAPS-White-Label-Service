@@ -9,6 +9,7 @@ import { ErrorTracker } from '../utils/errors/StandardError';
 import { LoggingService } from '../utils/logging/LoggingService';
 import { PersistentTradeDiscoveryService } from '../services/trade/PersistentTradeDiscoveryService';
 import { TenantManagementService } from '../services/tenant/TenantManagementService';
+import ApiVersioning from '../middleware/apiVersioning';
 
 const router = Router();
 const logger = LoggingService.getInstance().createLogger('Monitoring');
@@ -362,5 +363,37 @@ function getRequestMetrics() {
     averageResponseTime
   };
 }
+
+/**
+ * GET /monitoring/version
+ * API version information and statistics
+ */
+router.get('/version', ErrorHandler.asyncHandler(async (req: Request, res: Response) => {
+  const versionStats = ApiVersioning.getVersionStats();
+  
+  res.json({
+    timestamp: new Date().toISOString(),
+    api: {
+      name: 'SWAPS White Label API',
+      version: versionStats.current,
+      supportedVersions: versionStats.supported,
+      deprecatedVersions: versionStats.deprecated,
+      defaultVersion: versionStats.default,
+      sunsetSchedule: versionStats.sunset
+    },
+    compatibility: {
+      strategies: [
+        'Accept header: Accept: application/vnd.swaps.v1+json',
+        'Custom header: X-API-Version: 1.0.0',
+        'URL path: /api/v1/endpoint',
+        'Query parameter: ?version=1.0.0'
+      ],
+      headers: {
+        versioning: ['X-API-Version', 'X-API-Current-Version', 'X-API-Supported-Versions'],
+        deprecation: ['Warning', 'Deprecation', 'Sunset']
+      }
+    }
+  });
+}));
 
 export default router; 
