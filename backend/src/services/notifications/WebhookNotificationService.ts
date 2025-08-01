@@ -1,6 +1,7 @@
 import { LoggingService, Logger } from '../../utils/logging/LoggingService';
 import { TenantConfig } from '../../types/abstract';
 import { TradeLoop } from '../../types/trade';
+import { SecurityUtils } from '../../utils/security/SecurityUtils';
 import fetch from 'node-fetch';
 
 /**
@@ -321,12 +322,8 @@ export class WebhookNotificationService {
    * Generate HMAC signature for webhook verification
    */
   private generateSignature(payload: WebhookPayload, secret: string): string {
-    const crypto = require('crypto');
     const payloadString = JSON.stringify(payload);
-    return crypto
-      .createHmac('sha256', secret)
-      .update(payloadString)
-      .digest('hex');
+    return SecurityUtils.generateHmacSignature(payloadString, secret);
   }
 
   /**

@@ -31,7 +31,13 @@ export class PersistenceManager {
     this.dataDir = process.env.DATA_DIR || path.join(__dirname, '../../../data');
     
     this.logger.info(`Persistence ${this.isEnabled ? 'ENABLED' : 'DISABLED'}, using directory: ${this.dataDir}`);
-    this.logger.info(`Environment variable ENABLE_PERSISTENCE="${process.env.ENABLE_PERSISTENCE}", DATA_DIR="${process.env.DATA_DIR}"`);
+    
+    // Sanitize environment variable logging
+    const sanitizedEnv = {
+      ENABLE_PERSISTENCE: process.env.ENABLE_PERSISTENCE,
+      DATA_DIR: process.env.DATA_DIR ? '[SET]' : '[NOT_SET]'
+    };
+    this.logger.info('Environment configuration loaded', sanitizedEnv);
     
     // Check if we should use Redis
     if (process.env.USE_REDIS === 'true') {

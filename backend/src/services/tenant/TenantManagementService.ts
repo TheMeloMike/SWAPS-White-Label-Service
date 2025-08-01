@@ -2,7 +2,7 @@ import { LoggingService, Logger } from '../../utils/logging/LoggingService';
 import { PersistenceManager } from '../../lib/persistence/PersistenceManager';
 import { TenantConfig } from '../../types/abstract';
 import { Mutex } from 'async-mutex';
-import * as crypto from 'crypto';
+import { SecurityUtils, HashedApiKey } from '../../utils/security/SecurityUtils';
 
 /**
  * Tenant creation request interface
@@ -71,7 +71,7 @@ export class TenantManagementService {
   
   // Tenant storage
   private tenants = new Map<string, TenantConfig>();           // tenantId -> config
-  private apiKeyToTenant = new Map<string, string>();         // apiKey -> tenantId
+  private apiKeyHashToTenant = new Map<string, string>();     // hashedApiKey -> tenantId
   private tenantUsage = new Map<string, ApiKeyUsage>();       // tenantId -> usage stats
   
   // Thread safety
@@ -129,11 +129,15 @@ export class TenantManagementService {
         const tenantId = this.generateTenantId();
         const apiKey = this.generateApiKey();
         
+        // Hash the API key for secure storage
+        const hashedApiKey = SecurityUtils.hashApiKey(apiKey);
+        
         // Create tenant configuration
         const tenant: TenantConfig = {
           id: tenantId,
           name: request.name,
-          apiKey,
+          apiKey: '', // Empty for security - only hashed version stored
+          hashedApiKey,
           settings: {
             algorithm: {
               ...this.DEFAULT_ALGORITHM_SETTINGS,
@@ -162,7 +166,7 @@ export class TenantManagementService {
         
         // Store tenant
         this.tenants.set(tenantId, tenant);
-        this.apiKeyToTenant.set(apiKey, tenantId);
+        this.apiKeyHashToTenant.set(hashedApiKey.hash, tenantId);
         
         // Initialize usage tracking
         this.tenantUsage.set(tenantId, {
@@ -207,16 +211,66 @@ export class TenantManagementService {
   }
 
   /**
-   * Get tenant by API key
+   * Get tenant by API key (supports both legacy plain text and new hashed keys)
    */
   public async getTenantByApiKey(apiKey: string): Promise<TenantConfig | null> {
-    const tenantId = this.apiKeyToTenant.get(apiKey);
-    if (!tenantId) return null;
+    // Validate API key format first
+    if (!SecurityUtils.isValidApiKeyFormat(apiKey)) {
+      return null;
+    }
     
-    // Update last used time
-    await this.recordApiKeyUsage(tenantId, 'general');
+    // Search through all tenants to find matching API key
+    for (const tenant of this.tenants.values()) {
+      // New secure method: check hashed API key
+      if (tenant.hashedApiKey) {
+        if (SecurityUtils.verifyApiKey(apiKey, tenant.hashedApiKey)) {
+          // Update last used time
+          await this.recordApiKeyUsage(tenant.id, 'general');
+          return tenant;
+        }
+      }
+      // Legacy fallback: check plain text API key (for migration period)
+      else if (tenant.apiKey && tenant.apiKey === apiKey) {
+        // Auto-migrate to hashed version
+        await this.migrateApiKeyToHashed(tenant.id, apiKey);
+        
+        // Update last used time
+        await this.recordApiKeyUsage(tenant.id, 'general');
+        return tenant;
+      }
+    }
     
-    return this.tenants.get(tenantId) || null;
+    return null;
+  }
+  
+  /**
+   * Migrate a tenant's API key from plain text to hashed storage
+   */
+  private async migrateApiKeyToHashed(tenantId: string, plainApiKey: string): Promise<void> {
+    const tenant = this.tenants.get(tenantId);
+    if (!tenant) return;
+    
+    try {
+      // Hash the existing API key
+      const hashedApiKey = SecurityUtils.hashApiKey(plainApiKey);
+      
+      // Update tenant config
+      tenant.hashedApiKey = hashedApiKey;
+      tenant.apiKey = ''; // Clear plain text version
+      
+      // Update lookup map
+      this.apiKeyHashToTenant.set(hashedApiKey.hash, tenantId);
+      
+      // Persist the changes
+      await this.saveTenants();
+      
+      this.logger.info('API key migrated to hashed storage', { tenantId });
+    } catch (error) {
+      this.logger.error('Failed to migrate API key to hashed storage', {
+        tenantId,
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
   }
 
   /**
@@ -288,7 +342,12 @@ export class TenantManagementService {
         
         // Remove from all maps
         this.tenants.delete(tenantId);
-        this.apiKeyToTenant.delete(tenant.apiKey);
+        
+        // Remove from hash lookup if it exists
+        if (tenant.hashedApiKey) {
+          this.apiKeyHashToTenant.delete(tenant.hashedApiKey.hash);
+        }
+        
         this.tenantUsage.delete(tenantId);
         
         // Persist changes
@@ -325,14 +384,20 @@ export class TenantManagementService {
         }
         
         // Remove old API key mapping
-        this.apiKeyToTenant.delete(tenant.apiKey);
+        if (tenant.hashedApiKey) {
+          this.apiKeyHashToTenant.delete(tenant.hashedApiKey.hash);
+        }
         
-        // Generate new API key
+        // Generate new API key and hash it
         const newApiKey = this.generateApiKey();
-        tenant.apiKey = newApiKey;
+        const hashedApiKey = SecurityUtils.hashApiKey(newApiKey);
+        
+        // Update tenant with new hashed API key
+        tenant.apiKey = ''; // Clear plain text
+        tenant.hashedApiKey = hashedApiKey;
         
         // Update mapping
-        this.apiKeyToTenant.set(newApiKey, tenantId);
+        this.apiKeyHashToTenant.set(hashedApiKey.hash, tenantId);
         
         // Persist changes
         await this.saveTenants();
@@ -507,11 +572,11 @@ export class TenantManagementService {
    * Private helper methods
    */
   private generateTenantId(): string {
-    return `tenant_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`;
+    return SecurityUtils.generateTenantId();
   }
 
   private generateApiKey(): string {
-    return `swaps_${crypto.randomBytes(32).toString('hex')}`;
+    return SecurityUtils.generateApiKey();
   }
 
   private async loadTenants(): Promise<void> {
@@ -522,7 +587,12 @@ export class TenantManagementService {
       // Restore tenants
       for (const tenant of tenantsData) {
         this.tenants.set(tenant.id, tenant);
-        this.apiKeyToTenant.set(tenant.apiKey, tenant.id);
+        
+        // Restore hash lookup if available (new format)
+        if (tenant.hashedApiKey) {
+          this.apiKeyHashToTenant.set(tenant.hashedApiKey.hash, tenant.id);
+        }
+        // Note: Legacy plain text API keys will be migrated on first use
       }
       
       // Restore usage data

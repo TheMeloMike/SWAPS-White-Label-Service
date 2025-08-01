@@ -3,7 +3,7 @@ import { LoggingService, Logger } from '../../utils/logging/LoggingService';
 import { TransformationCacheEntry, OptimizationConfig, CacheMetrics } from '../../types/optimization';
 import { TenantTradeGraph } from '../../types/abstract';
 import { WalletState } from '../../types/trade';
-import { createHash } from 'crypto';
+import { SecurityUtils } from '../../utils/security/SecurityUtils';
 
 /**
  * HIGH-ROI: DATA TRANSFORMATION CACHE
@@ -250,7 +250,7 @@ export class DataTransformationCache extends EventEmitter {
     };
 
     const jsonString = JSON.stringify(graphData);
-    return createHash(algorithm).update(jsonString).digest('hex');
+    return SecurityUtils.hashForCache(jsonString, algorithm);
   }
 
   private evictOldestEntry(): void {

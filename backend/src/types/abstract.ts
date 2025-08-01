@@ -60,7 +60,11 @@ export interface AbstractWallet {
 export interface TenantConfig {
   id: string;
   name: string;
-  apiKey: string;
+  apiKey: string;  // DEPRECATED: Keep for backward compatibility during migration
+  hashedApiKey?: {
+    hash: string;
+    salt: string;
+  };
   settings: {
     algorithm: {
       maxDepth: number;                    // Max participants in trade loops

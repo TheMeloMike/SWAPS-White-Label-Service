@@ -9,10 +9,24 @@ const logger = {
   error: (message: string, meta?: any) => console.error(`[AdminAuth] ERROR: ${message}`, meta || '')
 };
 
-// Admin credentials from environment variables
-const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'melomike';
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '$W4P$';
-const JWT_SECRET: string = process.env.JWT_SECRET || 'swaps-dashboard-secret-key-2024';
+// Admin credentials from environment variables - NO DEFAULTS FOR SECURITY
+// Validate required security environment variables on startup
+if (!process.env.ADMIN_USERNAME) {
+  throw new Error('ADMIN_USERNAME environment variable is required');
+}
+if (!process.env.ADMIN_PASSWORD) {
+  throw new Error('ADMIN_PASSWORD environment variable is required');
+}
+if (!process.env.JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is required');
+}
+if (process.env.JWT_SECRET.length < 32) {
+  throw new Error('JWT_SECRET must be at least 32 characters long');
+}
+
+const ADMIN_USERNAME: string = process.env.ADMIN_USERNAME;
+const ADMIN_PASSWORD: string = process.env.ADMIN_PASSWORD;
+const JWT_SECRET: string = process.env.JWT_SECRET;
 const JWT_EXPIRES_IN: string = process.env.JWT_EXPIRES_IN || '24h';
 
 export interface AdminAuthRequest extends Request {
