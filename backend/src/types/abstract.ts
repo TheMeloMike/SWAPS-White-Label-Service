@@ -115,6 +115,7 @@ export interface TenantTradeGraph {
   
   // Change detection
   lastUpdated: Date;
+  lastAccessed?: Date;  // For memory optimization
   changeLog: GraphChange[];
 }
 

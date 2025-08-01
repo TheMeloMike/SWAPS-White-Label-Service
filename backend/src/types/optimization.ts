@@ -4,16 +4,12 @@
  */
 
 export interface TransformationCacheEntry {
-  tenantId: string;
-  graphHash: string;
-  transformedData: {
-    wallets: Map<string, any>;
-    nftOwnership: Map<string, string>;
-    wantedNfts: Map<string, Set<string>>;
-  };
+  key: string;
+  data: any;
   timestamp: number;
-  hitCount: number;
-  computeTime: number;
+  size: number;
+  hits: number;
+  lastAccessed: number;
 }
 
 export interface QueryOptimizationMetrics {

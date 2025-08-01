@@ -307,26 +307,7 @@ export class DataTransformationCache extends EventEmitter {
     }, 5 * 60 * 1000); // Every 5 minutes
   }
 
-  private cleanupExpiredEntries(): void {
-    const now = Date.now();
-    const keysToDelete: string[] = [];
 
-    for (const [key, entry] of this.cache.entries()) {
-      if (now - entry.timestamp > this.config.ttl) {
-        keysToDelete.push(key);
-      }
-    }
-
-    keysToDelete.forEach(key => this.cache.delete(key));
-
-    if (keysToDelete.length > 0) {
-      this.updateMetrics();
-      this.logger.debug('Cleaned up expired cache entries', {
-        entriesRemoved: keysToDelete.length,
-        cacheSize: this.cache.size
-      });
-    }
-  }
 
   private logPerformanceMetrics(): void {
     this.logger.info('DataTransformationCache performance metrics', {
