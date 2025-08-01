@@ -85,7 +85,7 @@ export class KafkaIntegrationService {
       brokers,
       retry: {
         initialRetryTime: 100,
-        retries: 8
+        retries: 2 // Reduce retries for faster fallback
       }
     });
     
@@ -117,7 +117,7 @@ export class KafkaIntegrationService {
   }
   
   /**
-   * Connect to Kafka and set up consumers
+   * Connect to Kafka and set up consumers with timeout
    */
   public async connect(): Promise<void> {
     if (this.isConnected) {
@@ -129,10 +129,23 @@ export class KafkaIntegrationService {
       const operation = this.logger.operation('connect');
       operation.info('Connecting to Kafka');
       
-      await this.producer.connect();
+      // Add timeout wrapper for connection attempts
+      const connectionTimeout = 5000; // 5 seconds
+      
+      await Promise.race([
+        this.producer.connect(),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Producer connection timeout')), connectionTimeout)
+        )
+      ]);
       operation.info('Producer connected');
       
-      await this.consumer.connect();
+      await Promise.race([
+        this.consumer.connect(),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Consumer connection timeout')), connectionTimeout)
+        )
+      ]);
       operation.info('Consumer connected');
       
       // Subscribe to topics

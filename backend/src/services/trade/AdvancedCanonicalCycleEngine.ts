@@ -75,7 +75,7 @@ export class AdvancedCanonicalCycleEngine {
   
   // Advanced optimization services
   private graphPartitioner: GraphPartitioningService;
-  private kafkaService: KafkaIntegrationService;
+  private kafkaService: KafkaIntegrationService | null = null;
   
   // Canonical cycle tracking
   private canonicalCycles = new Map<string, TradeLoop>();
@@ -101,7 +101,7 @@ export class AdvancedCanonicalCycleEngine {
     this.logger = LoggingService.getInstance().createLogger('AdvancedCanonicalCycleEngine');
     this.sccFinder = SCCFinderService.getInstance();
     this.graphPartitioner = GraphPartitioningService.getInstance();
-    this.kafkaService = KafkaIntegrationService.getInstance();
+    // Lazy initialization of Kafka service - only when needed
     this.performanceOptimizer = PerformanceOptimizer.getInstance();
     
     // Initialize Bloom filter with default capacity
@@ -113,6 +113,17 @@ export class AdvancedCanonicalCycleEngine {
       AdvancedCanonicalCycleEngine.instance = new AdvancedCanonicalCycleEngine();
     }
     return AdvancedCanonicalCycleEngine.instance;
+  }
+
+  /**
+   * Lazy initialization of Kafka service - only when actually needed
+   */
+  private getKafkaService(): KafkaIntegrationService {
+    if (!this.kafkaService) {
+      this.logger.info('Initializing Kafka service on demand');
+      this.kafkaService = KafkaIntegrationService.getInstance();
+    }
+    return this.kafkaService;
   }
 
   /**
@@ -401,7 +412,7 @@ export class AdvancedCanonicalCycleEngine {
     
     for (const batch of batches) {
       try {
-        await this.kafkaService.publishTradeResults('advanced-canonical-engine', batch);
+        await this.getKafkaService().publishTradeResults('advanced-canonical-engine', batch);
       } catch (error) {
         this.logger.warn('Failed to publish trade results to Kafka', {
           batchSize: batch.length,
