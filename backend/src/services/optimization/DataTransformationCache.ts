@@ -359,7 +359,7 @@ export class DataTransformationCache extends EventEmitter {
     // If still too large, remove oldest entries
     if (this.cache.size > DataTransformationCache.MAX_CACHE_ENTRIES) {
       const entries = Array.from(this.cache.entries())
-        .sort((a, b) => a[1].lastAccessed - b[1].lastAccessed);
+        .sort((a, b) => a[1].timestamp - b[1].timestamp);
       
       const toRemove = this.cache.size - DataTransformationCache.MAX_CACHE_ENTRIES;
       entries.slice(0, toRemove).forEach(([key]) => {
