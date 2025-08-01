@@ -62,16 +62,6 @@ export interface ConsolidationResult {
   };
 }
 
-
-  /**
-   * 🚀 ENTERPRISE CONSOLIDATION OPTIMIZATION
-   * - Canonical engine enabled by default for maximum sophistication
-   * - 100% canonical routing for consistent advanced algorithm usage
-   * - Increased max depth to 15 for deeper trade discovery
-   * - Reduced min efficiency to 0.3 for broader opportunity detection
-   * - Extended timeout to 120 seconds for complex scenarios
-   * - Expected improvement: 100-300% algorithm sophistication utilization
-   */
 export class AlgorithmConsolidationService extends EventEmitter {
   private static instance: AlgorithmConsolidationService;
   private logger: Logger;
@@ -104,13 +94,13 @@ export class AlgorithmConsolidationService extends EventEmitter {
     
     // Initialize configuration from environment
     this.config = {
-      useCanonicalEngine: process.env.ENABLE_CANONICAL_ENGINE !== 'false' // Enterprise: default enabled,
+      useCanonicalEngine: process.env.ENABLE_CANONICAL_ENGINE === 'true',
       enableLegacyFallback: process.env.ENABLE_LEGACY_FALLBACK !== 'false',
       enablePerformanceComparison: process.env.ENABLE_PERFORMANCE_COMPARISON === 'true',
       canonicalEnginePercentage: parseInt(process.env.CANONICAL_ENGINE_PERCENTAGE || '100'),
-      maxDepth: parseInt(process.env.MAX_DISCOVERY_DEPTH || '15'),
-      minEfficiency: parseFloat(process.env.MIN_TRADE_EFFICIENCY || '0.3'),
-      timeoutMs: parseInt(process.env.DISCOVERY_TIMEOUT_MS || '120000')
+      maxDepth: parseInt(process.env.MAX_DISCOVERY_DEPTH || '10'),
+      minEfficiency: parseFloat(process.env.MIN_TRADE_EFFICIENCY || '0.6'),
+      timeoutMs: parseInt(process.env.DISCOVERY_TIMEOUT_MS || '30000')
     };
     
     // Initialize canonical engine
@@ -245,15 +235,15 @@ export class AlgorithmConsolidationService extends EventEmitter {
         enableBundleDetection: true,
         canonicalOnly: true,
         
-        // Advanced optimizations (MVP OPTIMIZED - Earlier Algorithm Activation)
-        enableLouvainClustering: wallets.size > 7,  // MVP: Enable clustering earlier (was 10)
-        enableBloomFilters: wallets.size > 15,      // MVP: Enable filters earlier (was 20) 
-        enableKafkaDistribution: wallets.size > 50, // Keep large scale threshold
-        enableParallelProcessing: wallets.size > 3, // MVP: Enable parallelization earlier (was 5)
+        // Advanced optimizations (PRESERVE ALL SOPHISTICATED ALGORITHMS)
+        enableLouvainClustering: wallets.size > 10,
+        enableBloomFilters: wallets.size > 20,
+        enableKafkaDistribution: wallets.size > 50, // Enable for large scale (like existing system)
+        enableParallelProcessing: wallets.size > 5,
         maxCommunitySize: 50,
-        bloomFilterCapacity: Math.max(2000, wallets.size * 150), // MVP: +50% larger capacity, higher base
+        bloomFilterCapacity: Math.max(1000, wallets.size * 100),
         kafkaBatchSize: 10,
-        parallelWorkers: Math.min(6, Math.max(1, Math.floor(wallets.size / 8))) // MVP: More workers, lower ratio
+        parallelWorkers: Math.min(4, Math.max(1, Math.floor(wallets.size / 10)))
       };
       
       operation.info('Executing canonical cycle discovery', {

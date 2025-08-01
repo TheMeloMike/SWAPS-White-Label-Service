@@ -22,15 +22,6 @@ interface EdgeTradeData {
  * 
  * This is the core algorithm that powers the SWAPS NFT trading platform.
  */
-
-  /**
-   * 🚀 ENTERPRISE OPTIMIZATION APPLIED
-   * - Increased timeout to 120 seconds for complex scenarios
-   * - Increased max depth to 15 for deeper cycle detection  
-   * - Reduced min efficiency to 0.3 for broader discovery
-   * - Increased batch size to 500 for better throughput
-   * - Expected performance improvement: 50-150%
-   */
 export class TradeLoopFinderService {
   private nftPricingService: NFTPricingService;
   private nftService: NFTService;
@@ -56,10 +47,10 @@ export class TradeLoopFinderService {
   private cyclesFound: number = 0; // Consider removing if CycleFinderService tracks this
   private edgesTraversed: number = 0; // Consider removing if CycleFinderService tracks this
   
-  // Configuration (MVP Optimized for Better Trade Discovery)
-  private readonly MAX_SCC_CONCURRENCY = 6; // Process up to 6 SCCs in parallel (MVP: +50% concurrency)
-  private readonly MAX_API_CONCURRENCY = 15; // Maximum concurrent API calls (MVP: +50% for faster data fetching)
-  private readonly MAX_CYCLES_DENSE_GRAPH = 1000; // Max cycles to find in dense graphs (MVP: 2x more trade opportunities)
+  // Configuration
+  private readonly MAX_SCC_CONCURRENCY = 4; // Process up to 4 SCCs in parallel
+  private readonly MAX_API_CONCURRENCY = 10; // Maximum concurrent API calls
+  private readonly MAX_CYCLES_DENSE_GRAPH = 500; // Max cycles to find in dense graphs
   private readonly VERBOSE_LOGGING = false;
   
   // State for graph building

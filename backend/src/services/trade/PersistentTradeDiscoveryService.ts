@@ -560,6 +560,13 @@ export class PersistentTradeDiscoveryService extends EventEmitter {
       const transformationResult = await this.optimizationManager.optimizeDataTransformation(
         tenantId,
         graph,
+        async () => this.optimizedDataTransformation(graph)
+      );
+      
+      // Fallback to original transformation if optimized fails
+      const fallbackResult = await this.optimizationManager.optimizeDataTransformation(
+        tenantId,
+        graph,
         async () => {
           // Original transformation logic wrapped in optimization function
           const wallets = new Map<string, WalletState>();

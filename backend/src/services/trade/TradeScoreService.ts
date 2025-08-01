@@ -13,15 +13,15 @@ export class TradeScoreService {
   private readonly DEFAULT_FAIRNESS_SCORE = 0.7; // Default fairness when insufficient price data
   private readonly MAX_PATH_LENGTH = 10; // Maximum number of steps before efficiency penalty
   private readonly MINIMUM_SCORE = 0.01; // Minimum score to avoid completely zero scores
-  private readonly MIN_SCORE = 0.4; // 40% minimum score to ensure trades aren't totally rejected
+  private readonly MIN_SCORE = 0.5; // 50% minimum score to ensure only high-quality trades (MVP Optimization: +25% quality threshold)
   private logger: Logger;
   private collectionIndexingService: CollectionIndexingService;
 
-  // Weights for different scoring factors - cached as constants
-  private readonly WEIGHT_EFFICIENCY = 0.35;    // How efficient is the trade loop?
-  private readonly WEIGHT_VALUE = 0.25;         // What's the total value involved?
-  private readonly WEIGHT_FAIRNESS = 0.25;      // How evenly distributed is the value?
-  private readonly WEIGHT_COMPLETION = 0.15;    // How likely is this trade to complete?
+  // Weights for different scoring factors - cached as constants (MVP Optimized)
+  private readonly WEIGHT_EFFICIENCY = 0.40;    // How efficient is the trade loop? (MVP: +14% weight - efficiency is key)
+  private readonly WEIGHT_VALUE = 0.20;         // What's the total value involved? (MVP: reduced to balance)
+  private readonly WEIGHT_FAIRNESS = 0.30;      // How evenly distributed is the value? (MVP: +20% weight - fairness increases success)
+  private readonly WEIGHT_COMPLETION = 0.10;    // How likely is this trade to complete? (MVP: reduced to focus on quality)
   
   // Flags to control logging verbosity
   private readonly VERBOSE_LOGGING = process.env.TRADE_SCORE_VERBOSE === 'true';
@@ -32,7 +32,7 @@ export class TradeScoreService {
     metrics: Record<string, number>;
     timestamp: number;
   }>();
-  private readonly SCORE_CACHE_TTL = 5 * 60 * 1000; // 5 minute cache
+  private readonly SCORE_CACHE_TTL = 10 * 60 * 1000; // 10 minute cache (MVP Optimization: 2x longer cache for efficiency)
 
   constructor() {
     this.nftPricingService = NFTPricingService.getInstance();

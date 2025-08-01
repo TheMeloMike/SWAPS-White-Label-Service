@@ -5,15 +5,6 @@ import { LoggingService } from '../../utils/logging/LoggingService';
  * Service dedicated to finding Strongly Connected Components (SCCs) in a directed graph
  * This implements an optimized version of Tarjan's Algorithm for finding SCCs efficiently
  */
-
-  /**
-   * 🚀 ENTERPRISE SCC OPTIMIZATION APPLIED
-   * - Increased timeout to 90 seconds for complex graphs
-   * - Increased batch size to 2000 for better memory efficiency
-   * - Reduced logging overhead with higher progress threshold
-   * - Pruning always enabled for performance
-   * - Expected improvement: 60-120% for large graphs
-   */
 export class SCCFinderService {
   private static instance: SCCFinderService;
   private logger = LoggingService.getInstance().createLogger('SCCFinder');
@@ -29,16 +20,16 @@ export class SCCFinderService {
   private ENABLE_PRUNING: boolean;
 
   private constructor() {
-    // Initialize configuration from environment variables or MVP optimized defaults
-    this.timeoutMs = parseInt(process.env.SCC_TIMEOUT_MS || '45000', 10);   // MVP: Faster timeout (was 90000)
-    this.BATCH_SIZE = parseInt(process.env.SCC_BATCH_SIZE || '3000', 10);   // MVP: +50% larger batches (was 2000)
-    this.PROGRESS_LOG_THRESHOLD = parseInt(process.env.SCC_PROGRESS_THRESHOLD || '100000', 10); // MVP: 2x less logging (was 50000)
-    this.ENABLE_PRUNING = process.env.SCC_ENABLE_PRUNING !== 'false'; // Optimized: always enabled // Default true
+    // Initialize configuration from environment variables or defaults
+    this.timeoutMs = parseInt(process.env.SCC_TIMEOUT_MS || '30000', 10);
+    this.BATCH_SIZE = parseInt(process.env.SCC_BATCH_SIZE || '1000', 10);
+    this.PROGRESS_LOG_THRESHOLD = parseInt(process.env.SCC_PROGRESS_THRESHOLD || '10000', 10);
+    this.ENABLE_PRUNING = process.env.SCC_ENABLE_PRUNING !== 'false'; // Default true
     
-    // Validate parsed values (MVP optimized fallbacks)
-    if (isNaN(this.timeoutMs) || this.timeoutMs <= 0) this.timeoutMs = 45000;  // MVP: Optimized fallback
-    if (isNaN(this.BATCH_SIZE) || this.BATCH_SIZE <= 0) this.BATCH_SIZE = 3000;  // MVP: Optimized fallback
-    if (isNaN(this.PROGRESS_LOG_THRESHOLD) || this.PROGRESS_LOG_THRESHOLD <= 0) this.PROGRESS_LOG_THRESHOLD = 100000; // MVP: Optimized fallback
+    // Validate parsed values (optional but recommended)
+    if (isNaN(this.timeoutMs) || this.timeoutMs <= 0) this.timeoutMs = 30000;
+    if (isNaN(this.BATCH_SIZE) || this.BATCH_SIZE <= 0) this.BATCH_SIZE = 1000;
+    if (isNaN(this.PROGRESS_LOG_THRESHOLD) || this.PROGRESS_LOG_THRESHOLD <= 0) this.PROGRESS_LOG_THRESHOLD = 10000;
     
     this.logger.info('SCCFinderService initialized with configuration:', {
       timeoutMs: this.timeoutMs,
@@ -444,93 +435,5 @@ export class SCCFinderService {
       nodesProcessed: this.nodesProcessed,
       timeElapsed: performance.now() - this.startTime
     };
-  }
-
-  /**
-   * 🚀 PARALLEL SCC PROCESSING (Enterprise Optimization)
-   * Process large graphs using parallel SCC detection
-   */
-  public async findStronglyConnectedComponentsParallel(
-    graph: { [key: string]: { [key: string]: string[] } },
-    nodes?: string[]
-  ): Promise<{ sccs: string[][]; metadata: { processedNodes: string[]; timedOut: boolean; timeElapsed: number } }> {
-    const nodeList = nodes || Object.keys(graph);
-    
-    // Use parallel processing for large graphs (>1000 nodes)
-    if (nodeList.length > 1000) {
-      return this.parallelSCCDetection(graph, nodeList);
-    }
-    
-    // Fall back to optimized sequential for smaller graphs
-    return this.findStronglyConnectedComponents(graph, nodes);
-  }
-
-  /**
-   * 🔧 Parallel SCC detection implementation
-   */
-  private async parallelSCCDetection(
-    graph: { [key: string]: { [key: string]: string[] } },
-    nodes: string[]
-  ): Promise<{ sccs: string[][]; metadata: { processedNodes: string[]; timedOut: boolean; timeElapsed: number } }> {
-    const startTime = performance.now();
-    const workerCount = Math.min(8, Math.max(2, Math.floor(nodes.length / 500)));
-    const chunkSize = Math.ceil(nodes.length / workerCount);
-    
-    // Partition nodes for parallel processing
-    const nodeChunks: string[][] = [];
-    for (let i = 0; i < nodes.length; i += chunkSize) {
-      nodeChunks.push(nodes.slice(i, i + chunkSize));
-    }
-    
-    // Process chunks in parallel (simulated with Promise.all)
-    const chunkResults = await Promise.all(
-      nodeChunks.map(chunk => this.processSCCChunk(graph, chunk))
-    );
-    
-    // Merge results
-    const allSCCs: string[][] = [];
-    const allProcessedNodes: string[] = [];
-    let anyTimedOut = false;
-    
-    for (const result of chunkResults) {
-      allSCCs.push(...result.sccs);
-      allProcessedNodes.push(...result.metadata.processedNodes);
-      anyTimedOut = anyTimedOut || result.metadata.timedOut;
-    }
-    
-    return {
-      sccs: allSCCs,
-      metadata: {
-        processedNodes: allProcessedNodes,
-        timedOut: anyTimedOut,
-        timeElapsed: performance.now() - startTime
-      }
-    };
-  }
-
-  /**
-   * 🔧 Process SCC chunk
-   */
-  private async processSCCChunk(
-    graph: { [key: string]: { [key: string]: string[] } },
-    nodes: string[]
-  ): Promise<{ sccs: string[][]; metadata: { processedNodes: string[]; timedOut: boolean; timeElapsed: number } }> {
-    // Extract subgraph for this chunk
-    const subgraph: { [key: string]: { [key: string]: string[] } } = {};
-    const nodeSet = new Set(nodes);
-    
-    for (const node of nodes) {
-      subgraph[node] = {};
-      if (graph[node]) {
-        for (const [target, nfts] of Object.entries(graph[node])) {
-          if (nodeSet.has(target)) {
-            subgraph[node][target] = nfts;
-          }
-        }
-      }
-    }
-    
-    // Process chunk with original algorithm
-    return this.findStronglyConnectedComponents(subgraph, nodes);
   }
 } 

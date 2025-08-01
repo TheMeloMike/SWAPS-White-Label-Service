@@ -33,17 +33,6 @@ import { TradeScoreService } from './TradeScoreService';
  * 
  * @author SWAPS Team
  */
-
-  /**
-   * 🚀 ENTERPRISE SCALABLE SERVICE OPTIMIZATION
-   * - Increased concurrent communities to 16 for maximum parallelization
-   * - Increased batch size to 200 for better throughput
-   * - Lowered parallel threshold to 25 for broader parallelization
-   * - Extended cache TTL to 30 minutes for better hit rates
-   * - Increased cache capacity 10x for enterprise scale
-   * - Enhanced Bloom filter capacity for better deduplication
-   * - Expected improvement: 200-400% throughput increase
-   */
 export class ScalableTradeLoopFinderService {
   private static instance: ScalableTradeLoopFinderService;
   
@@ -62,7 +51,7 @@ export class ScalableTradeLoopFinderService {
   }> = new Map();
   
   // Bloom filter for probabilistic filtering
-  private seenCycles: BloomFilter = new BloomFilter(20, 1000000); // Enterprise: 20 hash functions, 1M capacity // Default initialization, will be replaced
+  private seenCycles: BloomFilter = new BloomFilter(10, 100000); // Default initialization, will be replaced
   
   // User activity data for prioritization
   private walletActivityMap: Map<string, {
@@ -97,12 +86,12 @@ export class ScalableTradeLoopFinderService {
   private logger: any;
   
   // Parallelization settings (configurable via environment variables)
-  private readonly PARALLEL_BATCH_SIZE: number = 200; // Enterprise: larger batches
-  private readonly MAX_CONCURRENT_COMMUNITIES: number = 16; // Enterprise: 16 concurrent communities
-  private readonly COMMUNITY_CACHE_TTL_MS: number = 1800000; // Enterprise: 30 minute cache
+  private readonly PARALLEL_BATCH_SIZE: number;
+  private readonly MAX_CONCURRENT_COMMUNITIES: number;
+  private readonly COMMUNITY_CACHE_TTL_MS: number;
   private readonly MAX_TRADES_PER_COMMUNITY: number;
-  private readonly MIN_COMMUNITY_SIZE_FOR_PARALLEL: number = 25; // Enterprise: lower threshold
-  private readonly MAX_CACHE_ENTRIES: number = 10000; // Enterprise: 10x cache capacity // Maximum number of cached community results
+  private readonly MIN_COMMUNITY_SIZE_FOR_PARALLEL: number;
+  private readonly MAX_CACHE_ENTRIES: number = 1000; // Maximum number of cached community results
   private readonly EXTENDED_CACHE_TTL_MS: number; // Extended TTL for infrequent users
   
   // Flags for tracking processing state
