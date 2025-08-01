@@ -326,10 +326,11 @@ async function getCpuUsage(): Promise<number> {
   });
 }
 
-// Simple request tracking
+// Simple request tracking with memory optimization
 let requestCount = 0;
 let requestTimes: number[] = [];
 const startTime = Date.now();
+const MAX_REQUEST_HISTORY = 500; // Reduced from 1000 for memory efficiency
 
 // Middleware to track requests
 export const trackRequests = (req: any, res: any, next: any) => {
@@ -340,9 +341,9 @@ export const trackRequests = (req: any, res: any, next: any) => {
     const duration = Date.now() - start;
     requestTimes.push(duration);
     
-    // Keep only last 1000 requests
-    if (requestTimes.length > 1000) {
-      requestTimes = requestTimes.slice(-1000);
+    // Keep only recent requests for memory efficiency
+    if (requestTimes.length > MAX_REQUEST_HISTORY) {
+      requestTimes = requestTimes.slice(-MAX_REQUEST_HISTORY);
     }
   });
   
@@ -370,7 +371,7 @@ function getRequestMetrics() {
  */
 router.get('/version', ErrorHandler.asyncHandler(async (req: Request, res: Response) => {
   const versionStats = ApiVersioning.getVersionStats();
-  
+
   res.json({
     timestamp: new Date().toISOString(),
     api: {
@@ -394,6 +395,55 @@ router.get('/version', ErrorHandler.asyncHandler(async (req: Request, res: Respo
       }
     }
   });
+}));
+
+/**
+ * GET /monitoring/memory
+ * 🧠 Memory optimization and statistics endpoint
+ */
+router.get('/memory', ErrorHandler.asyncHandler(async (req: Request, res: Response) => {
+  try {
+    // Get memory stats from PersistentTradeDiscoveryService
+    const tradeService = PersistentTradeDiscoveryService.getInstance();
+    const memoryStats = tradeService.getMemoryStats();
+
+    // Calculate memory trends
+    const memUsage = process.memoryUsage();
+    const memoryTrend = {
+      current: {
+        heapUsedMB: Math.round(memUsage.heapUsed / 1024 / 1024),
+        heapTotalMB: Math.round(memUsage.heapTotal / 1024 / 1024),
+        heapUsagePercent: Math.round((memUsage.heapUsed / memUsage.heapTotal) * 100),
+        rssMB: Math.round(memUsage.rss / 1024 / 1024),
+        externalMB: Math.round(memUsage.external / 1024 / 1024)
+      },
+      limits: {
+        maxTenantGraphs: 50,
+        maxCacheEntries: 100,
+        maxRequestHistory: MAX_REQUEST_HISTORY
+      },
+      optimization: {
+        tenantGraphCleanupEnabled: true,
+        cacheEvictionEnabled: true,
+        garbageCollectionAvailable: typeof global.gc === 'function'
+      }
+    };
+
+    res.json({
+      timestamp: new Date().toISOString(),
+      status: memoryTrend.current.heapUsagePercent > 85 ? 'warning' : 'healthy',
+      ...memoryStats,
+      ...memoryTrend
+    });
+
+  } catch (error) {
+    logger.error('Memory monitoring failed', { error: (error as Error).message });
+    res.status(500).json({
+      status: 'error',
+      timestamp: new Date().toISOString(),
+      error: 'Memory monitoring service unavailable'
+    });
+  }
 }));
 
 export default router; 

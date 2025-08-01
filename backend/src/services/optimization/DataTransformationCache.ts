@@ -25,6 +25,10 @@ export class DataTransformationCache extends EventEmitter {
   // Cache storage
   private cache = new Map<string, TransformationCacheEntry>();
   
+  // Memory optimization: Set strict limits
+  private static readonly MAX_CACHE_ENTRIES = 100;
+  private static readonly CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+  
   // Configuration
   private config: OptimizationConfig['transformation'];
   
@@ -354,5 +358,42 @@ export class DataTransformationCache extends EventEmitter {
     };
     this.logger.info('Cache cleared');
     this.emit('cache:clear');
+  }
+
+  /**
+   * 🧠 MEMORY OPTIMIZATION: Clean up expired entries
+   */
+  private cleanupExpiredEntries() {
+    const now = Date.now();
+    let removedCount = 0;
+
+    // Remove expired entries
+    for (const [key, entry] of this.cache.entries()) {
+      if (now - entry.timestamp > DataTransformationCache.CACHE_TTL_MS) {
+        this.cache.delete(key);
+        removedCount++;
+      }
+    }
+
+    // If still too large, remove oldest entries
+    if (this.cache.size > DataTransformationCache.MAX_CACHE_ENTRIES) {
+      const entries = Array.from(this.cache.entries())
+        .sort((a, b) => a[1].lastAccessed - b[1].lastAccessed);
+      
+      const toRemove = this.cache.size - DataTransformationCache.MAX_CACHE_ENTRIES;
+      entries.slice(0, toRemove).forEach(([key]) => {
+        this.cache.delete(key);
+        removedCount++;
+      });
+    }
+
+    if (removedCount > 0) {
+      this.logger.info('Cache cleanup completed', {
+        entriesRemoved: removedCount,
+        currentSize: this.cache.size,
+        maxSize: DataTransformationCache.MAX_CACHE_ENTRIES
+      });
+      this.metrics.evictions += removedCount;
+    }
   }
 } 

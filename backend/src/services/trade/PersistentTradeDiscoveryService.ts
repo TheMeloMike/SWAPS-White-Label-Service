@@ -50,6 +50,10 @@ export class PersistentTradeDiscoveryService extends EventEmitter {
   // Multi-tenant state management
   private tenantGraphs = new Map<string, TenantTradeGraph>();
   private tenantConfigs = new Map<string, TenantConfig>();
+  
+  // Memory optimization: Limit tenant graphs in memory
+  private static readonly MAX_TENANT_GRAPHS = 50;
+  private static readonly MAX_CACHE_SIZE_MB = 15;
   private tenantMutexes = new Map<string, Mutex>();
   
   // Performance monitoring
@@ -77,9 +81,13 @@ export class PersistentTradeDiscoveryService extends EventEmitter {
     // 🚀 INITIALIZE HIGH-ROI OPTIMIZATION FRAMEWORK
     this.optimizationManager = OptimizationManager.getInstance();
     
+    // Start memory cleanup job
+    this.startMemoryCleanupJob();
+    
     this.logger.info('PersistentTradeDiscoveryService initialized', {
       canonicalDiscoveryEnabled: this.enableCanonicalDiscovery,
-      optimizationEnabled: true
+      optimizationEnabled: true,
+      memoryOptimizationEnabled: true
     });
   }
 
@@ -839,5 +847,86 @@ export class PersistentTradeDiscoveryService extends EventEmitter {
     } catch (error) {
       return 0;
     }
+  }
+
+  /**
+   * 🧠 MEMORY OPTIMIZATION: Start background cleanup job
+   */
+  private startMemoryCleanupJob() {
+    // Run cleanup every 5 minutes
+    setInterval(() => {
+      this.cleanupOldTenantGraphs();
+    }, 5 * 60 * 1000);
+
+    this.logger.info('Memory cleanup job started', {
+      maxTenantGraphs: PersistentTradeDiscoveryService.MAX_TENANT_GRAPHS,
+      maxCacheSizeMB: PersistentTradeDiscoveryService.MAX_CACHE_SIZE_MB
+    });
+  }
+
+  /**
+   * 🧠 MEMORY OPTIMIZATION: Clean up old tenant graphs
+   */
+  private cleanupOldTenantGraphs() {
+    const operation = this.logger.operation('cleanupOldTenantGraphs');
+    
+    if (this.tenantGraphs.size <= PersistentTradeDiscoveryService.MAX_TENANT_GRAPHS) {
+      operation.info('No cleanup needed', { currentGraphs: this.tenantGraphs.size });
+      return;
+    }
+
+    // Sort by last accessed time (most recent first)
+    const sortedEntries = Array.from(this.tenantGraphs.entries())
+      .map(([tenantId, graph]) => ({
+        tenantId,
+        graph,
+        lastAccessed: graph.lastAccessed || new Date(0)
+      }))
+      .sort((a, b) => b.lastAccessed.getTime() - a.lastAccessed.getTime());
+
+    // Keep only the most recently accessed graphs
+    const toKeep = sortedEntries.slice(0, PersistentTradeDiscoveryService.MAX_TENANT_GRAPHS);
+    const toRemove = sortedEntries.slice(PersistentTradeDiscoveryService.MAX_TENANT_GRAPHS);
+
+    // Clear and rebuild with kept graphs
+    this.tenantGraphs.clear();
+    toKeep.forEach(({ tenantId, graph }) => {
+      this.tenantGraphs.set(tenantId, graph);
+    });
+
+    // Also clean up tenant mutexes for removed graphs
+    toRemove.forEach(({ tenantId }) => {
+      this.tenantMutexes.delete(tenantId);
+    });
+
+    operation.info('Memory cleanup completed', {
+      graphsRemoved: toRemove.length,
+      graphsKept: toKeep.length,
+      totalGraphs: this.tenantGraphs.size
+    });
+
+    // Force garbage collection if available (Node.js with --expose-gc)
+    if (global.gc) {
+      global.gc();
+      operation.info('Garbage collection triggered');
+    }
+  }
+
+  /**
+   * 🧠 MEMORY OPTIMIZATION: Get memory usage statistics
+   */
+  public getMemoryStats() {
+    const memUsage = process.memoryUsage();
+    return {
+      tenantGraphs: this.tenantGraphs.size,
+      tenantConfigs: this.tenantConfigs.size,
+      tenantMutexes: this.tenantMutexes.size,
+      memoryUsage: {
+        heapUsedMB: Math.round(memUsage.heapUsed / 1024 / 1024),
+        heapTotalMB: Math.round(memUsage.heapTotal / 1024 / 1024),
+        heapUsagePercent: Math.round((memUsage.heapUsed / memUsage.heapTotal) * 100),
+        rssMB: Math.round(memUsage.rss / 1024 / 1024)
+      }
+    };
   }
 } 

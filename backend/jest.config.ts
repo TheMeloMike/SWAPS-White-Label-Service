@@ -1,22 +1,22 @@
-/**
- * Jest Configuration for TypeScript
- * Provides comprehensive testing setup for enterprise-grade testing
- */
 
-import type { Config } from '@jest/types';
+import type { Config } from 'jest';
 
-const config: Config.InitialOptions = {
-  // Use ts-jest for TypeScript compilation
+const config: Config = {
   preset: 'ts-jest',
   testEnvironment: 'node',
-  
-  // Test file patterns
+  roots: ['<rootDir>/src'],
   testMatch: [
-    '<rootDir>/src/**/__tests__/**/*.ts',
-    '<rootDir>/src/**/?(*.)+(spec|test).ts'
+    '**/__tests__/**/*.ts',
+    '**/?(*.)+(spec|test).ts'
   ],
-  
-  // Coverage configuration
+  transform: {
+    '^.+\.ts$': ['ts-jest', {
+      useESM: false,
+      tsconfig: {
+        module: 'commonjs'
+      }
+    }]
+  },
   collectCoverageFrom: [
     'src/**/*.ts',
     '!src/**/*.d.ts',
@@ -25,58 +25,26 @@ const config: Config.InitialOptions = {
     '!src/**/*.spec.ts',
     '!src/index.ts'
   ],
-  
   coverageDirectory: 'coverage',
-  coverageReporters: ['text', 'lcov', 'html', 'json'],
+  coverageReporters: ['text', 'lcov', 'html'],
   coverageThreshold: {
     global: {
-      branches: 70,
-      functions: 80,
-      lines: 80,
-      statements: 80
+      branches: 80,
+      functions: 85,
+      lines: 85,
+      statements: 85
     }
   },
-  
-  // Setup files
   setupFilesAfterEnv: ['<rootDir>/src/tests/setup.ts'],
-  
-  // Timeout
   testTimeout: 30000,
-  
-  // Verbose output
   verbose: true,
-  
-  // Clear mocks between tests
   clearMocks: true,
-  
-  // Path ignoring
+  restoreMocks: true,
   testPathIgnorePatterns: [
     '/node_modules/',
     '/deprecated_consumer_platform/',
     '/dist/'
-  ],
-  
-  // Transform configuration
-  transform: {
-    '^.+\\.ts$': ['ts-jest', {
-      tsconfig: 'tsconfig.json'
-    }]
-  },
-  
-  // Module name mapping for absolute imports
-  moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/src/$1',
-    '^@services/(.*)$': '<rootDir>/src/services/$1',
-    '^@utils/(.*)$': '<rootDir>/src/utils/$1',
-    '^@types/(.*)$': '<rootDir>/src/types/$1'
-  },
-  
-  // Global variables
-  globals: {
-    'ts-jest': {
-      useESM: false
-    }
-  }
+  ]
 };
 
-export default config; 
+export default config;
