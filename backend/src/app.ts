@@ -19,6 +19,7 @@ try {
 // Import white label routes
 import whiteLabelApiRoutes from './routes/whiteLabelApi.routes';
 import healthRoutes from './routes/health.routes';
+import docsRoutes from './routes/docs.routes';
 
 const logger = LoggingService.getInstance().createLogger('WhiteLabelApp');
 const app = express();
@@ -65,6 +66,7 @@ app.use(express.json({ limit: '10mb' }));
 // API Routes
 app.use('/api/v1', whiteLabelApiRoutes);
 app.use('/health', healthRoutes);
+app.use('/', docsRoutes); // Documentation routes at root level
 
 // Favicon route - serve a simple SWAPS favicon
 app.get('/favicon.ico', (req, res) => {
