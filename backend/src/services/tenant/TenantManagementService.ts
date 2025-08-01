@@ -120,7 +120,7 @@ export class TenantManagementService {
   /**
    * Create a new tenant
    */
-  public async createTenant(request: TenantCreationRequest): Promise<TenantConfig> {
+  public async createTenant(request: TenantCreationRequest): Promise<{ tenant: TenantConfig; apiKey: string }> {
     const operation = this.logger.operation('createTenant');
     
     try {
@@ -191,7 +191,7 @@ export class TenantManagementService {
         });
         
         operation.end();
-        return tenant;
+        return { tenant, apiKey };
       });
     } catch (error) {
       operation.error('Failed to create tenant', {

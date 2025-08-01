@@ -5,6 +5,7 @@ import { PersistentTradeDiscoveryService } from '../services/trade/PersistentTra
 import { tenantAuth } from '../middleware/tenantAuth';
 import { Request, Response } from 'express';
 import { LoggingService } from '../utils/logging/LoggingService';
+import { RateLimiters } from '../middleware/enhancedRateLimit';
 
 const router = Router();
 const logger = LoggingService.getInstance().createLogger('WhiteLabelAPI');
@@ -52,7 +53,7 @@ router.get('/health', (req: Request, res: Response) => {
  *   }
  * }
  */
-router.post('/discovery/trades', tenantAuth.authenticate, whiteLabelController.discoverTrades);
+router.post('/discovery/trades', RateLimiters.enterprise, tenantAuth.authenticate, whiteLabelController.discoverTrades);
 
 /**
  * POST /api/v1/inventory/submit
@@ -64,7 +65,7 @@ router.post('/discovery/trades', tenantAuth.authenticate, whiteLabelController.d
  *   "nfts": [AbstractNFT[]]
  * }
  */
-router.post('/inventory/submit', tenantAuth.authenticate, whiteLabelController.submitInventory);
+router.post('/inventory/submit', RateLimiters.standard, tenantAuth.authenticate, whiteLabelController.submitInventory);
 
 /**
  * POST /api/v1/wants/submit
@@ -76,7 +77,7 @@ router.post('/inventory/submit', tenantAuth.authenticate, whiteLabelController.s
  *   "wantedNFTs": ["nft1", "nft2", ...]
  * }
  */
-router.post('/wants/submit', tenantAuth.authenticate, whiteLabelController.submitWants);
+router.post('/wants/submit', RateLimiters.standard, tenantAuth.authenticate, whiteLabelController.submitWants);
 
 /**
  * GET /api/v1/trades/active
@@ -86,7 +87,7 @@ router.post('/wants/submit', tenantAuth.authenticate, whiteLabelController.submi
  * - walletId: specific wallet filter
  * - limit: max results (default 100)
  */
-router.get('/trades/active', tenantAuth.authenticate, whiteLabelController.getActiveTrades);
+router.get('/trades/active', RateLimiters.enterprise, tenantAuth.authenticate, whiteLabelController.getActiveTrades);
 
 /**
  * GET /api/v1/status
@@ -117,7 +118,7 @@ router.post('/admin/tenants', tenantAuth.requireAdmin, async (req: Request, res:
       return;
     }
     
-    const tenant = await tenantService.createTenant(request);
+    const { tenant, apiKey } = await tenantService.createTenant(request);
     
     // Initialize tenant in persistent trade service
     await persistentTradeService.initializeTenant(tenant);
@@ -132,7 +133,7 @@ router.post('/admin/tenants', tenantAuth.requireAdmin, async (req: Request, res:
       tenant: {
         id: tenant.id,
         name: tenant.name,
-        apiKey: tenant.apiKey,
+        apiKey: apiKey,
         settings: tenant.settings,
         metadata: tenant.metadata,
         createdAt: tenant.createdAt

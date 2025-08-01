@@ -8,6 +8,8 @@
     "start": "node src/index.js || node dist/index.js",
     "dev": "node src/index.js",
     "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
     "test:tradeloop": "jest TradeLoopFinder",
     "test:algorithm": "HELIUS_API_KEY=demo SWAP_PROGRAM_ID=Swap111111111111111111111111111111111111111 node src/tests/algorithm-performance.js",
     "lint": "eslint src/**/*.ts"
@@ -50,6 +52,7 @@
   },
   "devDependencies": {
     "@babel/preset-env": "^7.26.9",
+    "@jest/types": "^30.0.5",
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
     "@types/jest": "^29.5.14",

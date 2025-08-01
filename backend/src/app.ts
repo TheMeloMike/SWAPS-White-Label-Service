@@ -20,6 +20,7 @@ try {
 import whiteLabelApiRoutes from './routes/whiteLabelApi.routes';
 import healthRoutes from './routes/health.routes';
 import docsRoutes from './routes/docs.routes';
+import monitoringRoutes, { trackRequests } from './routes/monitoring.routes';
 import { ErrorHandler } from './middleware/errorHandler';
 
 const logger = LoggingService.getInstance().createLogger('WhiteLabelApp');
@@ -64,12 +65,14 @@ app.use('/*.ico', cors());
 // Parse JSON request bodies (generous limit for NFT metadata)
 app.use(express.json({ limit: '10mb' }));
 
-// Add request tracking for error handling
+// Add request tracking for error handling and monitoring
 app.use(ErrorHandler.addRequestTracking);
+app.use(trackRequests);
 
 // API Routes
 app.use('/api/v1', whiteLabelApiRoutes);
 app.use('/health', healthRoutes);
+app.use('/monitoring', monitoringRoutes); // Enterprise monitoring endpoints
 app.use('/', docsRoutes); // Documentation routes at root level
 
 // Favicon route - serve a simple SWAPS favicon
