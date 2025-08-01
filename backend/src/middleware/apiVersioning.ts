@@ -209,7 +209,7 @@ export class ApiVersioning {
   public static versionHandler(handlers: { [version: string]: Function }) {
     return (req: Request & { apiVersion?: ApiVersion }, res: Response, next: NextFunction) => {
       if (!req.apiVersion) {
-        const error = ErrorFactory.internalServerError(
+        const error = ErrorFactory.internalError(
           'API version not detected. Ensure version detection middleware is applied first.'
         );
         return next(error);
