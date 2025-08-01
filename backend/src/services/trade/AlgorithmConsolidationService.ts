@@ -231,7 +231,7 @@ export class AlgorithmConsolidationService extends EventEmitter {
       const canonicalConfig: AdvancedCycleEngineConfig = {
         maxDepth: config?.maxDepth || this.config.maxDepth,
         timeoutMs: config?.timeoutMs || this.config.timeoutMs,
-        maxCyclesPerSCC: config?.maxLoopsPerRequest || 100,
+        maxCyclesPerSCC: config?.maxResults || 100,
         enableBundleDetection: true,
         canonicalOnly: true,
         
@@ -285,10 +285,10 @@ export class AlgorithmConsolidationService extends EventEmitter {
           engineVersion: 'canonical-v2.0.0'
         },
         performance: {
-          transformationTime: result.performance?.transformationTime || 0,
-          discoveryTime: result.performance?.discoveryTime || processingTime,
+          transformationTime: result.performance?.sccTimeMs || 0,
+          discoveryTime: result.performance?.cycleDiscoveryTimeMs || processingTime,
           totalTime: processingTime,
-          memoryUsage: result.performance?.memoryUsage || 0
+          memoryUsage: process.memoryUsage().heapUsed
         }
       };
       
@@ -326,13 +326,7 @@ export class AlgorithmConsolidationService extends EventEmitter {
         wallets,
         nftOwnership,
         wantedNfts,
-        undefined, // rejectionPreferences
-        {
-          maxDepth: config?.maxDepth || this.config.maxDepth,
-          minEfficiency: config?.minEfficiency || this.config.minEfficiency,
-          timeoutMs: config?.timeoutMs || this.config.timeoutMs,
-          maxLoopsPerRequest: config?.maxLoopsPerRequest || 100
-        }
+        new Map() // rejectionPreferences (empty map)
       );
       
       const processingTime = Date.now() - startTime;
