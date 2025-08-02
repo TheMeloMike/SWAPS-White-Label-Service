@@ -148,6 +148,34 @@ export class AlgorithmConsolidationService extends EventEmitter {
     const startTime = Date.now();
     
     try {
+      // 🚀 PERFORMANCE OPTIMIZATION: Early exit for empty data
+      if (wallets.size === 0 || nftOwnership.size === 0) {
+        operation.info('Empty dataset - returning early', {
+          wallets: wallets.size,
+          nfts: nftOwnership.size,
+          wants: wantedNfts.size
+        });
+        
+        const quickResult: ConsolidationResult = {
+          trades: [],
+          algorithm: 'early-exit',
+          executionTime: Date.now() - startTime,
+          engineUsed: 'optimization',
+          metadata: {
+            totalCycles: 0,
+            efficiency: 1.0,
+            performance: {
+              dataTransformationTime: 0,
+              algorithmExecutionTime: 0,
+              scoringTime: 0
+            }
+          }
+        };
+        
+        operation.end();
+        return quickResult;
+      }
+
       operation.info('Starting unified trade discovery', {
         wallets: wallets.size,
         nfts: nftOwnership.size,

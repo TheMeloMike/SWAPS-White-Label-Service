@@ -157,8 +157,8 @@ export class TradeDiscoveryService implements ITradeDiscoveryService {
     this.collectionConfigService = CollectionConfigService.getInstance();
     // DataSyncService will be resolved lazily on first use
     
-    // Load persisted state
-    this.loadStateFromPersistence();
+    // PERFORMANCE OPTIMIZATION: Make persistence loading lazy
+    // this.loadStateFromPersistence(); // Moved to lazy loading - only load when data is actually needed
   }
 
   public static getInstance(): TradeDiscoveryService {
@@ -166,6 +166,49 @@ export class TradeDiscoveryService implements ITradeDiscoveryService {
       TradeDiscoveryService.instance = new TradeDiscoveryService();
     }
     return TradeDiscoveryService.instance;
+  }
+
+  /**
+   * 🚀 PERFORMANCE OPTIMIZATION: Early validation for empty operations
+   * Checks if wallet exists before doing expensive operations
+   */
+  public async hasWallet(walletAddress: string): Promise<boolean> {
+    // Check in-memory first (fast)
+    if (this.wallets.has(walletAddress)) {
+      return true;
+    }
+    
+    // Only load persistence if needed
+    if (!this.isStateLoaded) {
+      await this.ensureStateLoaded();
+    }
+    
+    return this.wallets.has(walletAddress);
+  }
+
+  /**
+   * 🚀 PERFORMANCE OPTIMIZATION: Lazy state loading
+   * Only loads persistent state when actually needed
+   */
+  private isStateLoaded = false;
+  private loadingPromise: Promise<void> | null = null;
+
+  private async ensureStateLoaded(): Promise<void> {
+    if (this.isStateLoaded) {
+      return;
+    }
+
+    // Prevent multiple simultaneous loads
+    if (this.loadingPromise) {
+      return this.loadingPromise;
+    }
+
+    this.loadingPromise = this.loadStateFromPersistence().then(() => {
+      this.isStateLoaded = true;
+      this.loadingPromise = null;
+    });
+
+    return this.loadingPromise;
   }
 
   /**
@@ -1747,7 +1790,18 @@ export class TradeDiscoveryService implements ITradeDiscoveryService {
       const operation = this.logger.operation('getTradesForWallet');
       operation.info(`Finding trades for wallet`, { wallet: walletAddress });
       
-      // Verify the wallet exists in our system
+      // 🚀 PERFORMANCE OPTIMIZATION: Quick validation before expensive loading
+      const hasWalletQuick = await this.hasWallet(walletAddress);
+      if (!hasWalletQuick) {
+        operation.info(`Wallet not found after quick check`, { wallet: walletAddress });
+        operation.end();
+        return [];
+      }
+      
+      // Ensure state is loaded
+      await this.ensureStateLoaded();
+      
+      // Verify the wallet exists in our system (after loading state)
       if (!this.wallets.has(walletAddress)) {
         operation.info(`Wallet not found, loading wallet data`, { wallet: walletAddress });
         await this.updateWalletState(walletAddress, true);

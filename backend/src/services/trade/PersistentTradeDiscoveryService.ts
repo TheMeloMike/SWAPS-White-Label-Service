@@ -481,7 +481,18 @@ export class PersistentTradeDiscoveryService extends EventEmitter {
    * Get active trade loops for a specific wallet
    */
   public async getTradeLoopsForWallet(tenantId: string, walletId: string): Promise<TradeLoop[]> {
+    // 🚀 PERFORMANCE OPTIMIZATION: Early validation
+    const operation = this.logger.operation('getTradeLoopsForWallet');
+    
     const graph = this.getTenantGraph(tenantId);
+    
+    // Quick check - if tenant has no active loops, return empty immediately
+    if (!graph || graph.activeLoops.size === 0) {
+      operation.info('No active loops for tenant - returning early', { tenantId });
+      operation.end();
+      return [];
+    }
+    
     const loops: TradeLoop[] = [];
     
     for (const loop of graph.activeLoops.values()) {
