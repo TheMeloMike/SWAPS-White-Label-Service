@@ -33,6 +33,44 @@ router.get('/health', (req: Request, res: Response) => {
   });
 });
 
+// 📚 API DOCUMENTATION ENDPOINT
+router.get('/docs', (req: Request, res: Response) => {
+  const baseUrl = `${req.protocol}://${req.get('host')}`;
+  
+  res.json({
+    message: 'SWAPS White Label API Documentation',
+    version: '1.0.0',
+    documentation: {
+      interactive: `${baseUrl}/docs`,
+      openapi: `${baseUrl}/docs.json`,
+      postman: `${baseUrl}/docs.json` // Can be imported to Postman
+    },
+    quickStart: {
+      step1: 'Get API key from tenant creation',
+      step2: 'POST /api/v1/inventory/submit - Submit NFTs',
+      step3: 'POST /api/v1/wants/submit - Submit wants',
+      step4: 'POST /api/v1/discovery/trades - Get trade loops'
+    },
+    endpoints: [
+      'POST /api/v1/admin/tenants - Create tenant account',
+      'POST /api/v1/inventory/submit - Submit NFT inventory',
+      'POST /api/v1/wants/submit - Submit wanted NFTs',
+      'POST /api/v1/discovery/trades - Discover trade loops',
+      'GET /health - Health check',
+      'GET /health/deep - Detailed health check'
+    ],
+    authentication: {
+      type: 'API Key',
+      header: 'Authorization: Bearer YOUR_API_KEY',
+      note: 'Contact support to obtain API credentials'
+    },
+    support: {
+      documentation: 'https://desert-adjustment-111.notion.site/SWAPS-White-Label-Documentation-2409b1fc08278068a469c60e33a105d8',
+      email: 'Available through enterprise agreement'
+    }
+  });
+});
+
 // ==========================================
 // CORE TRADE DISCOVERY ENDPOINTS
 // ==========================================

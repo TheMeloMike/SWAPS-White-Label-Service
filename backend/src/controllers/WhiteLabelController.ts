@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { LoggingService, Logger } from '../utils/logging/LoggingService';
 import { PersistentTradeDiscoveryService } from '../services/trade/PersistentTradeDiscoveryService';
 import { TenantManagementService } from '../services/tenant/TenantManagementService';
+import { ErrorResponses, ApiError } from '../utils/errorResponses';
 import { 
   TradeDiscoveryRequest, 
   TradeDiscoveryResponse, 
@@ -41,7 +42,7 @@ export class WhiteLabelController {
     try {
       const tenant = req.tenant;
       if (!tenant) {
-        res.status(401).json({ error: 'Authentication required' });
+        ErrorResponses.sendError(res, ErrorResponses.unauthorized(), operation.operationId);
         operation.end();
         return;
       }
@@ -49,11 +50,11 @@ export class WhiteLabelController {
       // Check rate limits
       const rateLimit = await this.tenantService.checkRateLimit(tenant.id, 'discovery');
       if (!rateLimit.allowed) {
-        res.status(429).json({
-          error: 'Rate limit exceeded',
-          remaining: rateLimit.remaining,
-          resetTime: rateLimit.resetTime
-        });
+        ErrorResponses.sendError(
+          res, 
+          ErrorResponses.rateLimitExceeded(rateLimit.remaining, rateLimit.resetTime),
+          operation.operationId
+        );
         operation.end();
         return;
       }
@@ -63,7 +64,11 @@ export class WhiteLabelController {
       // Validate request
       const validation = this.validateTradeDiscoveryRequest(request);
       if (!validation.valid) {
-        res.status(400).json({ error: validation.error });
+        ErrorResponses.sendError(
+          res,
+          ErrorResponses.validationError(validation.error, { request }),
+          operation.operationId
+        );
         operation.end();
         return;
       }
@@ -180,7 +185,7 @@ export class WhiteLabelController {
     try {
       const tenant = req.tenant;
       if (!tenant) {
-        res.status(401).json({ error: 'Authentication required' });
+        ErrorResponses.sendError(res, ErrorResponses.unauthorized(), operation.operationId);
         operation.end();
         return;
       }
@@ -188,11 +193,11 @@ export class WhiteLabelController {
       // Check rate limits
       const rateLimit = await this.tenantService.checkRateLimit(tenant.id, 'nft_submission');
       if (!rateLimit.allowed) {
-        res.status(429).json({
-          error: 'Rate limit exceeded',
-          remaining: rateLimit.remaining,
-          resetTime: rateLimit.resetTime
-        });
+        ErrorResponses.sendError(
+          res,
+          ErrorResponses.rateLimitExceeded(rateLimit.remaining, rateLimit.resetTime),
+          operation.operationId
+        );
         operation.end();
         return;
       }
@@ -200,10 +205,22 @@ export class WhiteLabelController {
       const { nfts, walletId } = req.body;
 
       // Validate input
-      if (!Array.isArray(nfts) || !walletId) {
-        res.status(400).json({ 
-          error: 'Invalid request. Expected: { nfts: AbstractNFT[], walletId: string }' 
-        });
+      if (!Array.isArray(nfts)) {
+        ErrorResponses.sendError(
+          res,
+          ErrorResponses.invalidFormat('nfts', 'Array of AbstractNFT objects'),
+          operation.operationId
+        );
+        operation.end();
+        return;
+      }
+
+      if (!walletId) {
+        ErrorResponses.sendError(
+          res,
+          ErrorResponses.missingField('walletId'),
+          operation.operationId
+        );
         operation.end();
         return;
       }
@@ -211,10 +228,11 @@ export class WhiteLabelController {
       // Validate NFT data
       const invalidNFTs = this.validateNFTArray(nfts);
       if (invalidNFTs.length > 0) {
-        res.status(400).json({
-          error: 'Invalid NFT data',
-          invalidNFTs
-        });
+        ErrorResponses.sendError(
+          res,
+          ErrorResponses.invalidNftFormat({ invalidNFTs }),
+          operation.operationId
+        );
         operation.end();
         return;
       }
