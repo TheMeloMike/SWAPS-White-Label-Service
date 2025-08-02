@@ -157,18 +157,20 @@ export class AlgorithmConsolidationService extends EventEmitter {
         });
         
         const quickResult: ConsolidationResult = {
-          trades: [],
-          algorithm: 'early-exit',
-          executionTime: Date.now() - startTime,
-          engineUsed: 'optimization',
+          cycles: [],
           metadata: {
-            totalCycles: 0,
-            efficiency: 1.0,
-            performance: {
-              dataTransformationTime: 0,
-              algorithmExecutionTime: 0,
-              scoringTime: 0
-            }
+            algorithmUsed: 'canonical',
+            processingTimeMs: Date.now() - startTime,
+            cyclesFound: 0,
+            duplicatesEliminated: 0,
+            permutationsEliminated: 0,
+            engineVersion: 'early-exit-optimization'
+          },
+          performance: {
+            transformationTime: 0,
+            discoveryTime: 0,
+            totalTime: Date.now() - startTime,
+            memoryUsage: 0
           }
         };
         
