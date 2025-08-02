@@ -16,6 +16,9 @@ try {
   process.exit(1);
 }
 
+// Import and start background services for living persistent graph
+import { BackgroundTradeDiscoveryService } from './services/trade/BackgroundTradeDiscoveryService';
+
 // Import white label routes
 import whiteLabelApiRoutes from './routes/whiteLabelApi.routes';
 import healthRoutes from './routes/health.routes';
@@ -146,5 +149,32 @@ logger.info('SWAPS White Label API initialized', {
   corsOrigins: isProd ? corsOrigins.length : 'development (all origins allowed)',
   routes: ['/api/v1', '/health']
 });
+
+// 🌱 START LIVING PERSISTENT GRAPH: Initialize background services
+try {
+  const backgroundService = BackgroundTradeDiscoveryService.getInstance();
+  
+  // Configure for white label multi-tenant environment
+  backgroundService.configure({
+    enableDifferentialUpdates: true  // Optimize for frequent tenant updates
+  });
+  
+  // Start the living graph background processing
+  backgroundService.start();
+  
+  logger.info('🌱 Living Persistent Graph started successfully', {
+    service: 'BackgroundTradeDiscoveryService',
+    differentialUpdates: true,
+    status: 'operational'
+  });
+} catch (error) {
+  logger.error('🚨 CRITICAL: Failed to start living persistent graph', {
+    error: error instanceof Error ? error.message : String(error),
+    impact: 'System will fall back to on-demand computation (slower responses)'
+  });
+  
+  // Don't exit - allow system to continue with computation-based discovery
+  // but log this as a critical issue for monitoring
+}
 
 export default app; 
