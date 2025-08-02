@@ -42,7 +42,7 @@ export class WhiteLabelController {
     try {
       const tenant = req.tenant;
       if (!tenant) {
-        ErrorResponses.sendError(res, ErrorResponses.unauthorized(), operation.operationId);
+        ErrorResponses.sendError(res, ErrorResponses.unauthorized(), operation.name);
         operation.end();
         return;
       }
@@ -52,8 +52,8 @@ export class WhiteLabelController {
       if (!rateLimit.allowed) {
         ErrorResponses.sendError(
           res, 
-          ErrorResponses.rateLimitExceeded(rateLimit.remaining, rateLimit.resetTime),
-          operation.operationId
+          ErrorResponses.rateLimitExceeded(rateLimit.remaining, rateLimit.resetTime?.getTime?.() || Date.now()),
+          operation.name
         );
         operation.end();
         return;
@@ -66,8 +66,8 @@ export class WhiteLabelController {
       if (!validation.valid) {
         ErrorResponses.sendError(
           res,
-          ErrorResponses.validationError(validation.error, { request }),
-          operation.operationId
+          ErrorResponses.validationError(validation.error || 'Validation failed', { request }),
+          operation.name
         );
         operation.end();
         return;
@@ -185,7 +185,7 @@ export class WhiteLabelController {
     try {
       const tenant = req.tenant;
       if (!tenant) {
-        ErrorResponses.sendError(res, ErrorResponses.unauthorized(), operation.operationId);
+        ErrorResponses.sendError(res, ErrorResponses.unauthorized(), operation.name);
         operation.end();
         return;
       }
@@ -196,7 +196,7 @@ export class WhiteLabelController {
         ErrorResponses.sendError(
           res,
           ErrorResponses.rateLimitExceeded(rateLimit.remaining, rateLimit.resetTime),
-          operation.operationId
+          operation.name
         );
         operation.end();
         return;
@@ -209,7 +209,7 @@ export class WhiteLabelController {
         ErrorResponses.sendError(
           res,
           ErrorResponses.invalidFormat('nfts', 'Array of AbstractNFT objects'),
-          operation.operationId
+          operation.name
         );
         operation.end();
         return;
@@ -219,7 +219,7 @@ export class WhiteLabelController {
         ErrorResponses.sendError(
           res,
           ErrorResponses.missingField('walletId'),
-          operation.operationId
+          operation.name
         );
         operation.end();
         return;
@@ -231,7 +231,7 @@ export class WhiteLabelController {
         ErrorResponses.sendError(
           res,
           ErrorResponses.invalidNftFormat({ invalidNFTs }),
-          operation.operationId
+          operation.name
         );
         operation.end();
         return;
