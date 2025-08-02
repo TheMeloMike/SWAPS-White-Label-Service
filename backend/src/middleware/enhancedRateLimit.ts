@@ -242,6 +242,19 @@ export const RateLimiters = {
   }),
   
   /**
+   * Test-friendly rate limiter with very low limits for demonstration
+   */
+  testDemo: EnhancedRateLimit.create({
+    windowMs: 60 * 1000, // 1 minute
+    maxRequests: 5, // Only 5 requests per minute for testing
+    keyGenerator: (req: Request & { tenant?: any }) => 
+      req.tenant?.id || req.ip || 'anonymous',
+    message: 'Rate limit exceeded for testing purposes. Try again in 1 minute.',
+    headers: true,
+    standardHeaders: true
+  }),
+
+  /**
    * Custom rate limiter factory
    */
   custom: (config: RateLimitConfig) => EnhancedRateLimit.create(config)

@@ -75,10 +75,36 @@ export class ErrorResponses {
 
   static invalidNftFormat(details?: any): ApiError {
     return new ApiError(
-      'Invalid NFT format. Expected: { id, metadata, ownership, valuation }',
+      'Invalid NFT format. Expected: { id: string, metadata: { name: string, description?: string, image?: string }, ownership: { ownerId: string, blockchain?: string }, valuation?: { estimatedValue: number, currency: string } }',
       'INVALID_NFT_FORMAT',
       400,
-      details
+      { 
+        ...details,
+        expectedFormat: {
+          id: 'string - unique identifier',
+          metadata: { name: 'string - required', description: 'string - optional', image: 'string - optional' },
+          ownership: { ownerId: 'string - required', blockchain: 'string - optional' },
+          valuation: { estimatedValue: 'number - optional', currency: 'string - optional' }
+        }
+      }
+    );
+  }
+
+  static invalidArrayFormat(fieldName: string, expectedType: string): ApiError {
+    return new ApiError(
+      `Field '${fieldName}' must be an array of ${expectedType}. Example: [${expectedType === 'strings' ? '"item1", "item2"' : '{ ... }, { ... }'}]`,
+      'INVALID_ARRAY_FORMAT',
+      400,
+      { field: fieldName, expectedType, example: expectedType === 'strings' ? ['item1', 'item2'] : [{}] }
+    );
+  }
+
+  static invalidStringArray(fieldName: string): ApiError {
+    return new ApiError(
+      `Field '${fieldName}' must be an array of strings. Example: ["nft-id-1", "nft-id-2"]`,
+      'INVALID_STRING_ARRAY',
+      400,
+      { field: fieldName, expectedType: 'string[]', example: ['nft-id-1', 'nft-id-2'] }
     );
   }
 

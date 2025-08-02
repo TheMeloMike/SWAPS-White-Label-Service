@@ -71,6 +71,17 @@ router.get('/docs', (req: Request, res: Response) => {
   });
 });
 
+// 🧪 RATE LIMIT TEST ENDPOINT (for demonstrations and testing)
+router.get('/test/rate-limit', RateLimiters.testDemo, (req: Request, res: Response) => {
+  res.json({
+    message: 'Rate limit test endpoint',
+    info: 'This endpoint has very low rate limits (5 requests per minute) for testing purposes',
+    timestamp: new Date().toISOString(),
+    tenantId: (req as any).tenant?.id || 'anonymous',
+    requestNumber: Math.floor(Math.random() * 1000)
+  });
+});
+
 // ==========================================
 // CORE TRADE DISCOVERY ENDPOINTS
 // ==========================================

@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { TenantManagementService } from '../services/tenant/TenantManagementService';
 import { LoggingService } from '../utils/logging/LoggingService';
+import { ErrorResponses } from '../utils/errorResponses';
 
 /**
  * Extended Request interface with tenant information
@@ -73,10 +74,7 @@ export class TenantAuthMiddleware {
           ip: req.ip
         });
         
-        res.status(401).json({
-          error: 'Unauthorized',
-          message: 'Invalid API key format'
-        });
+        ErrorResponses.sendError(res, ErrorResponses.invalidApiKey('Invalid API key format'));
         operation.end();
         return;
       }
@@ -91,10 +89,7 @@ export class TenantAuthMiddleware {
           ip: req.ip
         });
         
-        res.status(401).json({
-          error: 'Unauthorized',
-          message: 'Invalid API key'
-        });
+        ErrorResponses.sendError(res, ErrorResponses.invalidApiKey());
         operation.end();
         return;
       }

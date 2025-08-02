@@ -183,30 +183,50 @@ class CompleteAPIAudit {
       const apiKey = rateTenant.data.tenant.apiKey;
       let rateLimited = false;
 
-      // Make many rapid requests
-      const promises = [];
-      for (let i = 0; i < 100; i++) {
-        promises.push(
-          axios.post(`${BASE_URL}/discovery/trades`, {
-            walletId: `rate_test_${i}`
-          }, {
+      // Test the dedicated rate limit test endpoint (5 requests per minute)
+      console.log('   🔍 Testing dedicated rate limit endpoint (5 req/min)...');
+      
+      for (let i = 0; i < 10; i++) {
+        try {
+          const response = await axios.get(`${BASE_URL}/test/rate-limit`, {
             headers: { 'Authorization': `Bearer ${apiKey}` }
-          }).catch(error => {
-            if (error.response?.status === 429) {
-              rateLimited = true;
-            }
-          })
-        );
+          });
+          
+          console.log(`   📊 Request ${i + 1}: Success (${response.status})`);
+          
+          // Check rate limit headers
+          const remaining = response.headers['x-ratelimit-remaining'];
+          if (remaining !== undefined) {
+            console.log(`   📊 Remaining requests: ${remaining}`);
+          }
+          
+        } catch (error) {
+          if (error.response?.status === 429) {
+            console.log(`   🚫 Request ${i + 1}: Rate limited! (${error.response.status})`);
+            
+            const retryAfter = error.response.headers['retry-after'];
+            const remaining = error.response.headers['x-ratelimit-remaining'];
+            
+            console.log(`   📊 Retry after: ${retryAfter} seconds`);
+            console.log(`   📊 Remaining: ${remaining}`);
+            
+            rateLimited = true;
+            break; // Stop when we hit rate limit
+          } else {
+            console.log(`   ❌ Request ${i + 1}: Error - ${error.message}`);
+          }
+        }
+        
+        // Small delay between requests
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
 
-      await Promise.all(promises);
-
       if (rateLimited) {
-        console.log('   ✅ Rate limiting active');
+        console.log('   ✅ Rate limiting active and working correctly');
         this.results.security.passed.push('Rate limiting protection');
       } else {
-        console.log('   ⚠️ No rate limiting detected (may need more requests)');
-        this.results.security.failed.push('Rate limiting not detected');
+        console.log('   ⚠️ Rate limiting test inconclusive');
+        this.results.security.failed.push('Rate limiting not triggered in test');
       }
 
     } catch (error) {

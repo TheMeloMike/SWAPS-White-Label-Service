@@ -205,7 +205,7 @@ export class WhiteLabelController {
       if (!Array.isArray(nfts)) {
         ErrorResponses.sendError(
           res,
-          ErrorResponses.invalidFormat('nfts', 'Array of AbstractNFT objects')
+          ErrorResponses.invalidArrayFormat('nfts', 'AbstractNFT objects')
         );
         operation.end();
         return;
@@ -283,7 +283,7 @@ export class WhiteLabelController {
     try {
       const tenant = req.tenant;
       if (!tenant) {
-        res.status(401).json({ error: 'Authentication required' });
+        ErrorResponses.sendError(res, ErrorResponses.unauthorized());
         operation.end();
         return;
       }
@@ -291,10 +291,22 @@ export class WhiteLabelController {
       const { walletId, wantedNFTs } = req.body;
 
       // Validate input
-      if (!walletId || !Array.isArray(wantedNFTs)) {
-        res.status(400).json({ 
-          error: 'Invalid request. Expected: { walletId: string, wantedNFTs: string[] }' 
-        });
+      if (!walletId) {
+        ErrorResponses.sendError(res, ErrorResponses.missingField('walletId'));
+        operation.end();
+        return;
+      }
+
+      if (!Array.isArray(wantedNFTs)) {
+        ErrorResponses.sendError(res, ErrorResponses.invalidStringArray('wantedNFTs'));
+        operation.end();
+        return;
+      }
+
+      // Validate that all wantedNFTs are strings
+      const invalidItems = wantedNFTs.filter(item => typeof item !== 'string');
+      if (invalidItems.length > 0) {
+        ErrorResponses.sendError(res, ErrorResponses.invalidStringArray('wantedNFTs'));
         operation.end();
         return;
       }
@@ -302,9 +314,12 @@ export class WhiteLabelController {
       // Validate tenant security settings
       const maxWants = tenant.settings.security.maxWantsPerWallet;
       if (wantedNFTs.length > maxWants) {
-        res.status(400).json({
-          error: `Too many wants. Maximum allowed: ${maxWants}`
-        });
+        ErrorResponses.sendError(res, new ApiError(
+          `Too many wants submitted. You can submit up to ${maxWants} wanted NFTs per request. Current request has ${wantedNFTs.length} items.`,
+          'TOO_MANY_WANTS',
+          400,
+          { submitted: wantedNFTs.length, maximum: maxWants, field: 'wantedNFTs' }
+        ));
         operation.end();
         return;
       }
