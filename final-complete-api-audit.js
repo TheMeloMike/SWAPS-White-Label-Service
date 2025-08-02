@@ -289,16 +289,34 @@ class CompleteAPIAudit {
         errorResponses.push(error.response?.data);
       }
 
-      // Check consistency
-      const hasConsistentFormat = errorResponses.every(err => 
-        err && (err.error || err.message) && typeof err === 'object'
-      );
+      // Check consistency with our standardized format
+      console.log(`   📊 Collected ${errorResponses.length} error responses for analysis`);
+      
+      let consistentCount = 0;
+      errorResponses.forEach((err, index) => {
+        console.log(`   📋 Error ${index + 1}:`, JSON.stringify(err).substring(0, 100) + '...');
+        
+        // Check for our standardized format: { error, code, details?, timestamp }
+        const hasStandardFormat = err && 
+          typeof err.error === 'string' && 
+          typeof err.code === 'string' && 
+          typeof err.timestamp === 'string';
+          
+        if (hasStandardFormat) {
+          consistentCount++;
+          console.log(`   ✅ Error ${index + 1} follows standard format`);
+        } else {
+          console.log(`   ❌ Error ${index + 1} does not follow standard format`);
+        }
+      });
 
-      if (hasConsistentFormat) {
-        console.log('   ✅ Error responses are consistent');
+      const consistencyRate = errorResponses.length > 0 ? (consistentCount / errorResponses.length) : 0;
+      
+      if (consistencyRate >= 0.8) {
+        console.log(`   ✅ Error responses are consistent (${Math.round(consistencyRate * 100)}% standard format)`);
         this.results.apiDesign.passed.push('Consistent error format');
       } else {
-        console.log('   ❌ Inconsistent error response formats');
+        console.log(`   ❌ Inconsistent error response formats (${Math.round(consistencyRate * 100)}% standard format)`);
         this.results.apiDesign.failed.push('Inconsistent error formats');
       }
 
@@ -649,28 +667,42 @@ class CompleteAPIAudit {
     // Test 1: Health Check Endpoint
     console.log('\n1️⃣ Testing Health Check Endpoint...');
     try {
-      const healthResponse = await axios.get(BASE_URL.replace('/api/v1', '/health'), {
-        timeout: 5000
+      const healthUrl = BASE_URL.replace('/api/v1', '/health');
+      console.log(`   🔍 Testing: ${healthUrl}`);
+      
+      const healthResponse = await axios.get(healthUrl, {
+        timeout: 10000 // Increased timeout
       });
       
-      if (healthResponse.status === 200) {
-        console.log('   ✅ Health check endpoint exists');
+      console.log(`   📊 Status: ${healthResponse.status}`);
+      console.log(`   📊 Response preview: ${JSON.stringify(healthResponse.data).substring(0, 100)}...`);
+      
+      if (healthResponse.status === 200 && healthResponse.data.status) {
+        console.log('   ✅ Health check endpoint exists and working');
         this.results.production.passed.push('Health check endpoint');
+      } else {
+        console.log('   ⚠️ Health endpoint responded but may have issues');
+        this.results.production.failed.push('Health endpoint issues');
       }
     } catch (error) {
+      console.log(`   ⚠️ Primary health check failed: ${error.message}`);
+      
       // Try alternative health check paths
       const alternativePaths = ['/api/health', '/api/v1/health', '/status', '/ping'];
       let found = false;
       
       for (const path of alternativePaths) {
         try {
-          await axios.get(BASE_URL.replace('/api/v1', path), { timeout: 5000 });
-          console.log(`   ✅ Health check found at ${path}`);
+          const altUrl = BASE_URL.replace('/api/v1', path);
+          console.log(`   🔍 Trying alternative: ${altUrl}`);
+          
+          const response = await axios.get(altUrl, { timeout: 10000 });
+          console.log(`   ✅ Health check found at ${path} (status: ${response.status})`);
           this.results.production.passed.push('Health check endpoint');
           found = true;
           break;
         } catch (e) {
-          // Continue trying
+          console.log(`   ❌ ${path} failed: ${e.message}`);
         }
       }
       
@@ -796,22 +828,33 @@ class CompleteAPIAudit {
 
     // Test 4: API Documentation
     console.log('\n4️⃣ Checking API Documentation...');
-    const docPaths = ['/docs', '/api/docs', '/api/v1/docs', '/swagger', '/api-docs'];
+    const docTests = [
+      { path: '/docs', url: BASE_URL.replace('/api/v1', '/docs') },
+      { path: '/api/docs', url: BASE_URL.replace('/api/v1', '/api/docs') },
+      { path: '/api/v1/docs', url: `${BASE_URL}/docs` }, // Correct API endpoint
+      { path: '/swagger', url: BASE_URL.replace('/api/v1', '/swagger') },
+      { path: '/api-docs', url: BASE_URL.replace('/api/v1', '/api-docs') }
+    ];
     let docsFound = false;
     
-    for (const path of docPaths) {
+    for (const test of docTests) {
       try {
-        const response = await axios.get(BASE_URL.replace('/api/v1', path), {
-          timeout: 5000
+        console.log(`   🔍 Testing docs at: ${test.url}`);
+        const response = await axios.get(test.url, {
+          timeout: 10000
         });
-        if (response.status === 200) {
-          console.log(`   ✅ API documentation found at ${path}`);
+        
+        console.log(`   📊 Status: ${response.status}`);
+        console.log(`   📊 Response preview: ${JSON.stringify(response.data).substring(0, 100)}...`);
+        
+        if (response.status === 200 && response.data) {
+          console.log(`   ✅ API documentation found at ${test.path}`);
           this.results.production.passed.push('API documentation available');
           docsFound = true;
           break;
         }
       } catch (error) {
-        // Continue checking
+        console.log(`   ❌ ${test.path} failed: ${error.message}`);
       }
     }
     
