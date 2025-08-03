@@ -1,11 +1,8 @@
 import express from 'express';
 import cors from 'cors';
-import helmet from 'helmet'; // ADD THIS
 import dotenv from 'dotenv';
 import { LoggingService } from './utils/logging/LoggingService';
 import { registerServices } from './di-container';
-import { SecurityHeaders } from './middleware/securityHeaders'; // ADD THIS
-import { RateLimiters } from './middleware/enhancedRateLimit'; // ADD THIS
 
 // Load environment variables
 dotenv.config();
@@ -30,11 +27,11 @@ import monitoringRoutes, { trackRequests } from './routes/monitoring.routes';
 import { ErrorHandler } from './middleware/errorHandler';
 import { detectApiVersion, configureEnterpriseVersioning } from './middleware/apiVersioning';
 
-const logger = LoggingService.getInstance().createLogger('WhiteLabelApp');
-const app = express();
+  const logger = LoggingService.getInstance().createLogger('WhiteLabelApp');
+  const app = express();
 
-// Configure enterprise API versioning
-configureEnterpriseVersioning();
+  // Configure enterprise API versioning
+  configureEnterpriseVersioning();
 
 // CORS configuration for API service
 const isProd = process.env.NODE_ENV === 'production';
@@ -68,28 +65,12 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-API-Key']
 }));
 
-// 🔒 SECURITY ENHANCEMENTS START HERE
-// Add Helmet for basic security headers
-app.use(helmet({
-  contentSecurityPolicy: false, // Not needed for API
-  crossOriginEmbedderPolicy: false // Not needed for API
-}));
-
-// Add our custom security headers
-app.use(SecurityHeaders.api());
-
-// Global rate limiting
-app.use('/api', RateLimiters.standard);
-
 // Special CORS bypass for static files (favicon, etc.)
 app.use('/favicon.ico', cors());
 app.use('/*.ico', cors());
 
-// Parse JSON request bodies with specific limits per endpoint
-app.use('/api/v1/inventory', express.json({ limit: '1mb' }));
-app.use('/api/v1/wants', express.json({ limit: '500kb' }));
-app.use('/api/v1', express.json({ limit: '100kb' })); // Default for other endpoints
-app.use(express.json({ limit: '50kb' })); // Global fallback
+// Parse JSON request bodies (generous limit for NFT metadata)
+app.use(express.json({ limit: '10mb' }));
 
 // Add request tracking for error handling and monitoring
 app.use(ErrorHandler.addRequestTracking);
@@ -98,7 +79,7 @@ app.use(trackRequests);
 // Add API versioning detection
 app.use('/api', detectApiVersion);
 
-// API Routes with specific rate limits
+// API Routes
 app.use('/api/v1', whiteLabelApiRoutes);
 app.use('/health', healthRoutes);
 app.use('/monitoring', monitoringRoutes); // Enterprise monitoring endpoints
@@ -166,13 +147,7 @@ process.on('uncaughtException', (err) => {
 logger.info('SWAPS White Label API initialized', {
   environment: isProd ? 'production' : 'development',
   corsOrigins: isProd ? corsOrigins.length : 'development (all origins allowed)',
-  routes: ['/api/v1', '/health'],
-  security: {
-    helmet: true,
-    securityHeaders: true,
-    rateLimiting: true,
-    requestSizeLimits: true
-  }
+  routes: ['/api/v1', '/health']
 });
 
 // 🌱 START LIVING PERSISTENT GRAPH: Initialize background services
@@ -202,4 +177,4 @@ try {
   // but log this as a critical issue for monitoring
 }
 
-export default app;
+export default app; 

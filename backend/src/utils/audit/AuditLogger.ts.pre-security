@@ -1,7 +1,6 @@
 import { LoggingService, Logger } from '../logging/LoggingService';
 import { SecurityUtils } from '../security/SecurityUtils';
 import { Request } from 'express';
-import FileAuditStorage from './FileAuditStorage';
 
 /**
  * Comprehensive Audit Logging System
@@ -142,21 +141,9 @@ export class AuditLogger {
   private eventStorage: AuditEvent[] = []; // In-memory storage for now
   private sequenceNumber = 0;
   private correlationMap = new Map<string, string[]>(); // correlationId -> eventIds
-  private fileStorage: FileAuditStorage | null = null; // File storage for persistence
   
   private constructor() {
     this.logger = LoggingService.getInstance().createLogger('AuditLogger');
-    
-    // Initialize file storage if persistence is enabled
-    if (process.env.ENABLE_AUDIT_PERSISTENCE !== 'false') {
-      try {
-        this.fileStorage = new FileAuditStorage();
-        this.logger.info('Audit file persistence enabled');
-      } catch (error) {
-        this.logger.error('Failed to initialize file storage', { error });
-      }
-    }
-    
     this.startCleanupProcess();
   }
   
@@ -192,17 +179,6 @@ export class AuditLogger {
     
     // Store event
     this.eventStorage.push(event);
-    
-    // Persist to file if enabled
-    if (this.fileStorage) {
-      this.fileStorage.append(event).catch(error => {
-        this.logger.error('Failed to persist audit event to file', {
-          error: error instanceof Error ? error.message : String(error),
-          eventId,
-          eventType: type
-        });
-      });
-    }
     
     // Update correlation mapping
     if (!this.correlationMap.has(correlationId)) {
