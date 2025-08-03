@@ -10,6 +10,48 @@ import { RateLimiters } from './middleware/enhancedRateLimit'; // ADD THIS
 // Load environment variables
 dotenv.config();
 
+// Initialize security systems
+import { SecurityInitializer } from './utils/security/SecurityInitializer';
+import { StructuredFileLogger } from './utils/logging/StructuredFileLogger';
+
+async function initializeSecurity() {
+  try {
+    const securityInit = SecurityInitializer.getInstance();
+    const result = await securityInit.initializeAll();
+    
+    if (result.success) {
+      console.log('🔒 Security systems initialized successfully');
+      if (result.warnings.length > 0) {
+        console.warn('⚠️  Security warnings:', result.warnings);
+      }
+    } else {
+      console.error('❌ Security initialization failed:', result.errors);
+      if (process.env.NODE_ENV === 'production') {
+        console.error('Exiting due to security initialization failure in production');
+        process.exit(1);
+      }
+    }
+    
+    // Start structured logging
+    const structuredLogger = StructuredFileLogger.getInstance();
+    structuredLogger.log('info', 'SWAPS API Starting', {
+      version: '2.0',
+      nodeEnv: process.env.NODE_ENV,
+      securityEnabled: result.success
+    }, 'system');
+    
+    return result;
+  } catch (error) {
+    console.error('❌ Failed to initialize security systems:', error);
+    if (process.env.NODE_ENV === 'production') {
+      process.exit(1);
+    }
+  }
+}
+
+// Initialize security before anything else
+initializeSecurity();
+
 // Register dependency injection services
 try {
   registerServices();
@@ -27,6 +69,7 @@ import whiteLabelApiRoutes from './routes/whiteLabelApi.routes';
 import healthRoutes from './routes/health.routes';
 import docsRoutes from './routes/docs.routes';
 import monitoringRoutes, { trackRequests } from './routes/monitoring.routes';
+import securityRoutes from './routes/security.routes';
 import { ErrorHandler } from './middleware/errorHandler';
 import { detectApiVersion, configureEnterpriseVersioning } from './middleware/apiVersioning';
 
@@ -78,8 +121,10 @@ app.use(helmet({
 // Add our custom security headers
 app.use(SecurityHeaders.api());
 
-// Global rate limiting
-app.use('/api', RateLimiters.standard);
+// Global rate limiting with persistence
+import { PersistentRateLimit, RateLimitConfigs } from './middleware/PersistentRateLimit';
+const persistentRateLimit = PersistentRateLimit.getInstance();
+app.use('/api', persistentRateLimit.createMiddleware(RateLimitConfigs.standard));
 
 // Special CORS bypass for static files (favicon, etc.)
 app.use('/favicon.ico', cors());
@@ -102,6 +147,7 @@ app.use('/api', detectApiVersion);
 app.use('/api/v1', whiteLabelApiRoutes);
 app.use('/health', healthRoutes);
 app.use('/monitoring', monitoringRoutes); // Enterprise monitoring endpoints
+app.use('/security', securityRoutes); // Security management endpoints (admin only)
 app.use('/', docsRoutes); // Documentation routes at root level
 
 // Favicon route - serve a simple SWAPS favicon

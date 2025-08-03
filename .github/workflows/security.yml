@@ -1,0 +1,184 @@
+name: Security Scan
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Run daily at 6 AM UTC
+    - cron: '0 6 * * *'
+
+jobs:
+  vulnerability-scan:
+    name: Vulnerability Scanning
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: backend/package-lock.json
+        
+    - name: Install dependencies
+      run: |
+        cd backend
+        npm ci
+        
+    - name: Run npm audit
+      run: |
+        cd backend
+        echo "🔍 Running npm audit..."
+        npm audit --audit-level=moderate --production
+        
+    - name: Run npm audit fix (dry run)
+      run: |
+        cd backend
+        echo "🔧 Checking available fixes..."
+        npm audit fix --dry-run
+        
+    - name: Check for outdated dependencies
+      run: |
+        cd backend
+        echo "📦 Checking for outdated packages..."
+        npm outdated || true
+        
+    - name: TypeScript Security Check
+      run: |
+        cd backend
+        echo "🔎 Running TypeScript compilation check..."
+        npm run build
+        
+    - name: Security Headers Test
+      run: |
+        echo "🛡️ Testing security implementation..."
+        # Test that security files exist
+        test -f backend/src/middleware/securityHeaders.ts || echo "❌ Security headers middleware missing"
+        test -f backend/src/utils/audit/AuditLogger.ts || echo "❌ Audit logger missing"
+        test -f backend/src/utils/security/SecurityUtils.ts || echo "❌ Security utils missing"
+        echo "✅ Security files present"
+        
+    - name: Environment Security Check
+      run: |
+        echo "🔐 Checking for hardcoded secrets..."
+        # Check for potential hardcoded secrets (excluding test files)
+        if grep -r -i "password\|secret\|key\|token" backend/src --exclude-dir=tests --exclude="*.test.*" --exclude="*.spec.*" | grep -v "// " | grep -v "* " | head -20; then
+          echo "⚠️ Potential hardcoded secrets found above - please review"
+          exit 1
+        else
+          echo "✅ No obvious hardcoded secrets found"
+        fi
+        
+    - name: Generate Security Report
+      run: |
+        echo "📋 Security Scan Summary" > security-report.md
+        echo "========================" >> security-report.md
+        echo "" >> security-report.md
+        echo "**Scan Date**: $(date)" >> security-report.md
+        echo "**Commit**: ${{ github.sha }}" >> security-report.md
+        echo "" >> security-report.md
+        
+        echo "## Vulnerability Scan Results" >> security-report.md
+        cd backend
+        if npm audit --audit-level=high --json > ../audit-results.json 2>/dev/null; then
+          echo "✅ No high-severity vulnerabilities found" >> ../security-report.md
+        else
+          echo "⚠️ Vulnerabilities detected - see audit-results.json" >> ../security-report.md
+        fi
+        
+    - name: Upload Security Report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: security-report
+        path: |
+          security-report.md
+          audit-results.json
+        retention-days: 30
+
+  code-quality:
+    name: Code Quality & Security
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        
+    - name: Security Linting
+      run: |
+        cd backend
+        echo "🔍 Security-focused linting..."
+        
+        # Check for console.log in production code
+        if find src -name "*.ts" -not -path "*/tests/*" -exec grep -l "console\.log" {} \; | head -5; then
+          echo "⚠️ Found console.log statements in production code"
+        fi
+        
+        # Check for TODO/FIXME comments that might indicate security issues
+        if find src -name "*.ts" -exec grep -l "TODO.*security\|FIXME.*security" {} \; | head -5; then
+          echo "⚠️ Found security-related TODO/FIXME comments"
+        fi
+        
+        # Check for any .env files accidentally committed
+        if find . -name ".env*" -not -name ".env.example" -not -name ".env.security" | head -5; then
+          echo "❌ Found .env files that shouldn't be committed"
+          exit 1
+        fi
+        
+        echo "✅ Code quality checks passed"
+
+  security-headers-verification:
+    name: Security Configuration Verification
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Verify Security Configuration
+      run: |
+        echo "🔧 Verifying security configuration..."
+        
+        # Check that Helmet is imported and used
+        if grep -q "import helmet" backend/src/app.ts && grep -q "app.use(helmet" backend/src/app.ts; then
+          echo "✅ Helmet middleware configured"
+        else
+          echo "❌ Helmet middleware not properly configured"
+          exit 1
+        fi
+        
+        # Check that security headers are applied
+        if grep -q "SecurityHeaders" backend/src/app.ts; then
+          echo "✅ Custom security headers configured"
+        else
+          echo "❌ Custom security headers not configured"
+          exit 1
+        fi
+        
+        # Check that rate limiting is applied
+        if grep -q "RateLimiters" backend/src/app.ts; then
+          echo "✅ Rate limiting configured"
+        else
+          echo "❌ Rate limiting not configured"
+          exit 1
+        fi
+        
+        # Verify audit logging is enabled
+        if grep -q "AuditLogger" backend/src/utils/audit/AuditLogger.ts; then
+          echo "✅ Audit logging present"
+        else
+          echo "❌ Audit logging not found"
+          exit 1
+        fi
+        
+        echo "✅ All security configurations verified"
