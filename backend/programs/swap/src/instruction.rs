@@ -1,6 +1,7 @@
 use borsh::{BorshDeserialize, BorshSerialize};
 use solana_program::{
     instruction::{AccountMeta, Instruction},
+    msg,
     program_error::ProgramError,
     pubkey::Pubkey,
 };
@@ -129,10 +130,65 @@ pub enum SwapInstruction {
     },
 }
 
+/// Instruction format version identifier
+#[derive(BorshSerialize, BorshDeserialize, Clone, Debug, PartialEq)]
+pub enum InstructionVersion {
+    /// Legacy manual parsing (tags 0-8) - maintained for backward compatibility
+    Legacy = 0,
+    /// Modern Borsh-based parsing with full schema validation
+    V1 = 1,
+}
+
+/// Modern versioned instruction wrapper for future extensibility
+#[derive(BorshSerialize, BorshDeserialize, Clone, Debug, PartialEq)]
+pub struct VersionedInstruction {
+    pub version: InstructionVersion,
+    pub instruction: SwapInstruction,
+}
+
 impl SwapInstruction {
-    /// Unpacks a byte buffer into a SwapInstruction
+    /// Modern unpacking with version detection and backward compatibility
+    /// 
+    /// This function automatically detects instruction format:
+    /// - Legacy format: Manual byte slicing (tags 0-8)
+    /// - V1 format: Full Borsh deserialization with schema validation
     pub fn unpack(input: &[u8]) -> Result<Self, ProgramError> {
+        if input.is_empty() {
+            return Err(SwapError::InvalidInstructionData.into());
+        }
+
+        // Check if this might be a modern versioned instruction
+        if input.len() >= 2 && input[0] == 255 {
+            // Modern versioned format: [255, version, ...borsh_data]
+            return Self::unpack_versioned(&input[1..]);
+        }
+
+        // Fall back to legacy manual parsing for backward compatibility
+        Self::unpack_legacy(input)
+    }
+
+    /// Unpack modern versioned instructions using Borsh
+    fn unpack_versioned(input: &[u8]) -> Result<Self, ProgramError> {
+        match VersionedInstruction::try_from_slice(input) {
+            Ok(versioned) => {
+                msg!("MODERN: Unpacked versioned instruction v{:?}", versioned.version);
+                Ok(versioned.instruction)
+            },
+            Err(_) => {
+                msg!("PARSE_ERROR: Failed to parse versioned instruction");
+                Err(SwapError::InvalidInstructionData.into())
+            }
+        }
+    }
+
+    /// Legacy manual parsing for backward compatibility (DEPRECATED)
+    /// 
+    /// WARNING: This parsing method is error-prone and maintained only for
+    /// backward compatibility. New clients should use versioned instructions.
+    fn unpack_legacy(input: &[u8]) -> Result<Self, ProgramError> {
         let (&tag, rest) = input.split_first().ok_or(SwapError::InvalidInstructionData)?;
+        
+        msg!("LEGACY: Unpacking instruction with tag {}", tag);
         
         Ok(match tag {
             0 => {
@@ -217,6 +273,107 @@ impl SwapInstruction {
             },
             _ => return Err(SwapError::InvalidInstructionData.into()),
         })
+    }
+
+    /// Pack instruction into bytes using modern versioned format
+    /// 
+    /// This creates a versioned instruction that can be safely evolved
+    /// without breaking existing functionality.
+    pub fn pack_versioned(&self) -> Vec<u8> {
+        let versioned = VersionedInstruction {
+            version: InstructionVersion::V1,
+            instruction: self.clone(),
+        };
+        
+        let mut packed = vec![255]; // Version marker
+        packed.extend_from_slice(&versioned.try_to_vec().unwrap());
+        
+        msg!("MODERN: Packed versioned instruction v{:?}", versioned.version);
+        packed
+    }
+
+    /// Legacy packing for backward compatibility (DEPRECATED)
+    /// 
+    /// WARNING: Use pack_versioned() for new code. This is maintained only
+    /// for compatibility with existing clients.
+    pub fn pack_legacy(&self) -> Vec<u8> {
+        msg!("LEGACY: Using deprecated manual packing");
+        
+        match self {
+            Self::InitializeTradeLoop { trade_id, step_count, timeout_seconds } => {
+                let mut packed = vec![0]; // Tag 0
+                packed.extend_from_slice(trade_id);
+                packed.push(*step_count);
+                packed.extend_from_slice(&timeout_seconds.to_le_bytes());
+                packed
+            },
+            Self::AddTradeStep { step_index, to, nft_mints } => {
+                let mut packed = vec![1]; // Tag 1
+                packed.push(*step_index);
+                packed.extend_from_slice(to.as_ref());
+                packed.push(nft_mints.len() as u8);
+                for mint in nft_mints {
+                    packed.extend_from_slice(mint.as_ref());
+                }
+                packed
+            },
+            Self::ApproveTradeStep { step_index } => {
+                vec![2, *step_index] // Tag 2
+            },
+            Self::ExecuteTradeStep { step_index } => {
+                vec![3, *step_index] // Tag 3
+            },
+            Self::ExecuteFullTradeLoop {} => {
+                vec![4] // Tag 4
+            },
+            Self::CancelTradeLoop {} => {
+                vec![5] // Tag 5
+            },
+            Self::UpgradeProgram { new_program_version } => {
+                let mut packed = vec![6]; // Tag 6
+                packed.extend_from_slice(&new_program_version.to_le_bytes());
+                packed
+            },
+            Self::InitializeProgramConfig { governance } => {
+                let mut packed = vec![7]; // Tag 7
+                if let Some(gov) = governance {
+                    packed.push(1); // Has governance
+                    packed.extend_from_slice(gov.as_ref());
+                } else {
+                    packed.push(0); // No governance
+                }
+                packed
+            },
+            Self::UpdateProgramConfig { new_upgrade_authority, new_governance, new_paused_state } => {
+                let mut packed = vec![8]; // Tag 8
+                
+                // Handle new_upgrade_authority
+                if let Some(authority) = new_upgrade_authority {
+                    packed.push(1);
+                    packed.extend_from_slice(authority.as_ref());
+                } else {
+                    packed.push(0);
+                }
+                
+                // Handle new_governance
+                if let Some(gov) = new_governance {
+                    packed.push(1);
+                    packed.extend_from_slice(gov.as_ref());
+                } else {
+                    packed.push(0);
+                }
+                
+                // Handle new_paused_state
+                if let Some(paused) = new_paused_state {
+                    packed.push(1);
+                    packed.push(if *paused { 1 } else { 0 });
+                } else {
+                    packed.push(0);
+                }
+                
+                packed
+            },
+        }
     }
 
     /// Helper function to unpack a vector of Pubkeys

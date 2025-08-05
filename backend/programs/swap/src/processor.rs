@@ -62,6 +62,20 @@ impl Processor {
         let rent_info = next_account_info(account_info_iter)?;
         let system_program_info = next_account_info(account_info_iter)?;
         
+        // SECURITY: Verify the trade loop account is the correct PDA for this creator and trade_id
+        // This prevents replay attacks where someone reuses an old trade_id
+        let (expected_trade_loop_address, _bump) = utils::get_trade_loop_address(
+            &trade_id,
+            payer_info.key,
+            program_id,
+        );
+        
+        if trade_loop_info.key != &expected_trade_loop_address {
+            msg!("Trade loop account address mismatch. Expected: {}, Got: {}", 
+                 expected_trade_loop_address, trade_loop_info.key);
+            return Err(SwapError::InvalidAccountData.into());
+        }
+        
         // Check if the trade loop account already exists
         if trade_loop_info.data_len() > 0 {
             return Err(SwapError::InvalidAccountData.into());
@@ -380,33 +394,47 @@ impl Processor {
             return Err(SwapError::InvalidInstructionData.into());
         }
         
-        // Get the step
-        let step = &mut trade_loop.steps[step_index as usize];
-        
-        // Ensure the step is approved
-        if step.status != StepStatus::Approved {
-            return Err(SwapError::MissingApprovals.into());
+        // First, validate the step before any modifications
+        {
+            let step = &trade_loop.steps[step_index as usize];
+            
+            // Ensure the step is approved
+            if step.status != StepStatus::Approved {
+                return Err(SwapError::MissingApprovals.into());
+            }
+            
+            // Ensure the step hasn't already been executed
+            if step.status == StepStatus::Executed {
+                return Err(SwapError::StepAlreadyExecuted.into());
+            }
+            
+            // Ensure the sender and recipient match the step
+            if step.from != *sender_info.key {
+                return Err(SwapError::InvalidAccountData.into());
+            }
+            
+            if step.to != *recipient_info.key {
+                return Err(SwapError::InvalidAccountData.into());
+            }
         }
         
-        // Ensure the step hasn't already been executed
-        if step.status == StepStatus::Executed {
-            return Err(SwapError::StepAlreadyExecuted.into());
-        }
+        // CRITICAL REENTRANCY FIX: Mark the step as executed BEFORE doing any transfers
+        // This prevents reentrancy attacks via malicious CPI callbacks during NFT transfers
+        trade_loop.steps[step_index as usize].status = StepStatus::Executed;
         
-        // Ensure the sender and recipient match the step
-        if step.from != *sender_info.key {
-            return Err(SwapError::InvalidAccountData.into());
-        }
+        // Immediately persist the status change to prevent reentrancy
+        trade_loop.serialize(&mut *trade_loop_info.data.borrow_mut())?;
         
-        if step.to != *recipient_info.key {
-            return Err(SwapError::InvalidAccountData.into());
-        }
+        msg!("REENTRANCY PROTECTION: Step {} marked as executed before transfers", step_index);
         
         // Get the rent to check for rent exemption
-        let rent = Rent::from_account_info(rent_info)?;
+        let _rent = Rent::from_account_info(rent_info)?;
+        
+        // Get a reference to the step for processing NFTs
+        let step_nft_mints = trade_loop.steps[step_index as usize].nft_mints.clone();
         
         // Process each NFT in the step
-        for (i, nft_mint) in step.nft_mints.iter().enumerate() {
+        for (_i, nft_mint) in step_nft_mints.iter().enumerate() {
             // Get the accounts for this specific NFT
             let mint_info = next_account_info(account_info_iter)?;
             let source_token_account_info = next_account_info(account_info_iter)?;
@@ -472,13 +500,7 @@ impl Processor {
             )?;
         }
         
-        // Mark the step as executed
-        step.status = StepStatus::Executed;
-        
-        // Update the trade loop state
-        trade_loop.serialize(&mut *trade_loop_info.data.borrow_mut())?;
-        
-        msg!("Executed trade step {}", step_index);
+        msg!("Successfully executed trade step {} with reentrancy protection", step_index);
         
         Ok(())
     }
@@ -559,12 +581,36 @@ impl Processor {
         // Get the rent for creating token accounts if needed
         let rent = Rent::from_account_info(rent_info)?;
         
-        // Process each step in the trade loop
+        // CRITICAL REENTRANCY FIX: Mark ALL steps as executed BEFORE doing ANY transfers
+        // This prevents reentrancy attacks via malicious CPI callbacks during NFT transfers
         for (step_index, step) in trade_loop.steps.iter_mut().enumerate() {
             // Ensure the step hasn't already been executed
             if step.status == StepStatus::Executed {
                 return Err(SwapError::StepAlreadyExecuted.into());
             }
+            
+            // Mark each step as executed before any transfers begin
+            step.status = StepStatus::Executed;
+            msg!("REENTRANCY PROTECTION: Step {} marked as executed before transfers", step_index);
+        }
+        
+        // Immediately persist all status changes to prevent reentrancy
+        trade_loop.serialize(&mut *trade_loop_info.data.borrow_mut())?;
+        msg!("REENTRANCY PROTECTION: All {} steps marked as executed and persisted", trade_loop.steps.len());
+        
+        // Reset the account iterator for the actual processing
+        let account_info_iter = &mut accounts.iter();
+        // Skip the base accounts we already consumed
+        let _executor_info = next_account_info(account_info_iter)?;
+        let _trade_loop_info = next_account_info(account_info_iter)?;
+        let _token_program_info = next_account_info(account_info_iter)?;
+        let _associated_token_program_info = next_account_info(account_info_iter)?;
+        let _system_program_info = next_account_info(account_info_iter)?;
+        let _rent_info = next_account_info(account_info_iter)?;
+        let _clock_info = next_account_info(account_info_iter)?;
+        
+        // Now process each step in the trade loop (status already updated)
+        for (_step_index, step) in trade_loop.steps.iter().enumerate() {
             
             // Get participant accounts for this step
             let sender_info = next_account_info(account_info_iter)?;
@@ -645,15 +691,9 @@ impl Processor {
                     token_program_info,
                 )?;
             }
-            
-            // Mark this step as executed
-            step.status = StepStatus::Executed;
         }
         
-        // Update the trade loop state
-        trade_loop.serialize(&mut *trade_loop_info.data.borrow_mut())?;
-        
-        msg!("Executed full trade loop with {} steps", trade_loop.steps.len());
+        msg!("Successfully executed full trade loop with {} steps using reentrancy protection", trade_loop.steps.len());
         
         Ok(())
     }

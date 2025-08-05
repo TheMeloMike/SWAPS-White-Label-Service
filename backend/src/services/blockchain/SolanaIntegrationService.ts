@@ -91,6 +91,7 @@ export class SolanaIntegrationService extends EventEmitter {
 
     /**
      * Convert a discovered TradeLoop to a blockchain-executable format
+     * SECURITY: Now uses PDA-based trade loop accounts with creator isolation for replay protection
      */
     public async createBlockchainTradeLoop(
         tradeLoop: TradeLoop, 
@@ -99,14 +100,24 @@ export class SolanaIntegrationService extends EventEmitter {
         const operation = this.logger.operation('createBlockchainTradeLoop');
         
         try {
-            // Generate unique trade ID and account
+            // Generate unique trade ID
             const tradeId = Array.from(crypto.getRandomValues(new Uint8Array(32)));
-            const tradeLoopAccount = Keypair.generate();
             const payer = creatorKeypair || this.payerKeypair;
             
             if (!payer) {
                 throw new Error('No payer keypair available for trade creation');
             }
+
+            // SECURITY ENHANCEMENT: Calculate PDA-based trade loop account with creator isolation
+            // This prevents replay attacks by including the creator's pubkey in the PDA generation
+            const [tradeLoopPda, bump] = this.calculateTradeLoopPDA(tradeId, payer.publicKey);
+            
+            operation.info('Generated secure trade loop PDA', {
+                tradeId: Buffer.from(tradeId).toString('hex'),
+                creator: payer.publicKey.toString(),
+                tradeLoopPda: tradeLoopPda.toString(),
+                bump: bump
+            });
 
             // Prepare instruction data
             const instructionData = this.createInitializeTradeLoopData(
@@ -115,11 +126,11 @@ export class SolanaIntegrationService extends EventEmitter {
                 24 * 60 * 60 // 24 hours timeout
             );
 
-            // Create transaction
+            // Create transaction with PDA-based account
             const instruction = new TransactionInstruction({
                 keys: [
                     { pubkey: payer.publicKey, isSigner: true, isWritable: true },
-                    { pubkey: tradeLoopAccount.publicKey, isSigner: true, isWritable: true },
+                    { pubkey: tradeLoopPda, isSigner: false, isWritable: true }, // PDA doesn't require signature
                     { pubkey: SYSVAR_RENT_PUBKEY, isSigner: false, isWritable: false },
                     { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
                 ],
@@ -131,13 +142,13 @@ export class SolanaIntegrationService extends EventEmitter {
             const signature = await sendAndConfirmTransaction(
                 this.connection, 
                 transaction, 
-                [payer, tradeLoopAccount]
+                [payer] // Only payer needs to sign, PDA is created automatically
             );
 
             // Create blockchain trade loop object
             const blockchainTradeLoop: BlockchainTradeLoop = {
                 tradeId: Buffer.from(tradeId).toString('hex'),
-                accountAddress: tradeLoopAccount.publicKey.toString(),
+                accountAddress: tradeLoopPda.toString(),
                 participants: tradeLoop.totalParticipants,
                 steps: tradeLoop.steps.map((step, index) => ({
                     stepIndex: index,
@@ -980,5 +991,32 @@ export class SolanaIntegrationService extends EventEmitter {
         data.writeUInt8(2, 0); // ApproveTradeStep instruction
         data.writeUInt8(stepIndex, 1); // step_index
         return data;
+    }
+
+    /**
+     * Calculate Trade Loop PDA with Creator Isolation for Replay Protection
+     * SECURITY: Matches the smart contract's enhanced PDA generation including creator pubkey
+     */
+    private calculateTradeLoopPDA(tradeId: number[], creator: PublicKey): [PublicKey, number] {
+        const seeds = [
+            Buffer.from("trade_loop", "utf8"),
+            Buffer.from(tradeId),
+            creator.toBuffer() // SECURITY: Creator isolation prevents replay attacks
+        ];
+        
+        return PublicKey.findProgramAddressSync(seeds, this.programId);
+    }
+
+    /**
+     * Legacy PDA calculation for backward compatibility (DEPRECATED)
+     * WARNING: This version is vulnerable to replay attacks - use only for migration
+     */
+    private calculateTradeLoopPDALegacy(tradeId: number[]): [PublicKey, number] {
+        const seeds = [
+            Buffer.from("trade_loop", "utf8"),
+            Buffer.from(tradeId)
+        ];
+        
+        return PublicKey.findProgramAddressSync(seeds, this.programId);
     }
 }
