@@ -11,6 +11,11 @@ yarn-error.log*
 .env.test.local
 .env.production.local
 
+# Blockchain keypairs - NEVER commit these!
+blockchain_payer_keypair.json
+*_keypair.json
+*.keypair
+
 # Logs
 logs
 *.log

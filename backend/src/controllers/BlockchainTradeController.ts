@@ -52,10 +52,26 @@ export class BlockchainTradeController {
         
         // Initialize Solana service with devnet configuration
         const solanaConfig: SolanaConfig = {
-            rpcUrl: 'https://api.devnet.solana.com',
-            programId: '8QhM7mdLqs2mwuNwY4R4UAGiXpLyMg28aih5mZKU2XFD',
-            network: 'devnet'
+            rpcUrl: process.env.SOLANA_RPC_URL || 'https://api.devnet.solana.com',
+            programId: process.env.SOLANA_PROGRAM_ID || '8QhM7mdLqs2mwuNwY4R4UAGiXpLyMg28aih5mZKU2XFD',
+            network: (process.env.SOLANA_NETWORK as 'devnet' | 'testnet' | 'mainnet-beta') || 'devnet'
         };
+        
+        // Load payer keypair from environment variable if available
+        if (process.env.BLOCKCHAIN_PAYER_PRIVATE_KEY) {
+            try {
+                const { Keypair } = require('@solana/web3.js');
+                const keypairData = JSON.parse(process.env.BLOCKCHAIN_PAYER_PRIVATE_KEY);
+                solanaConfig.payerKeypair = Keypair.fromSecretKey(new Uint8Array(keypairData));
+                this.logger.info('Loaded blockchain payer keypair from environment', {
+                    publicKey: solanaConfig.payerKeypair!.publicKey.toBase58()
+                });
+            } catch (error: any) {
+                this.logger.warn('Could not parse payer keypair from environment', { error: error.message });
+            }
+        } else {
+            this.logger.info('No blockchain payer keypair configured - blockchain execution will require user signatures');
+        }
         
         this.solanaService = SolanaIntegrationService.getInstance(solanaConfig);
         
