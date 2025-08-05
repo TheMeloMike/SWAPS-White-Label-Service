@@ -613,11 +613,11 @@ export class SolanaIntegrationService extends EventEmitter {
                         tradeLoop.status = 'expired';
                     } else {
                         // Check step statuses to determine overall status
-                        const allStepsApproved = blockchainState.steps.every(step => step.status === 'Approved');
-                        const anyStepsExecuted = blockchainState.steps.some(step => step.status === 'Executed');
+                        const allStepsApproved = blockchainState.steps.every((step: any) => step.status === 'Approved');
+                        const anyStepsExecuted = blockchainState.steps.some((step: any) => step.status === 'Executed');
                         
                         if (anyStepsExecuted) {
-                            const allStepsExecuted = blockchainState.steps.every(step => step.status === 'Executed');
+                            const allStepsExecuted = blockchainState.steps.every((step: any) => step.status === 'Executed');
                             tradeLoop.status = allStepsExecuted ? 'completed' : 'executing';
                         } else if (allStepsApproved) {
                             tradeLoop.status = 'approving';
@@ -626,7 +626,7 @@ export class SolanaIntegrationService extends EventEmitter {
                         }
                         
                         // Update step statuses
-                        blockchainState.steps.forEach((blockchainStep, index) => {
+                        blockchainState.steps.forEach((blockchainStep: any, index: number) => {
                             if (tradeLoop.steps[index]) {
                                 tradeLoop.steps[index].approved = blockchainStep.status === 'Approved' || blockchainStep.status === 'Executed';
                                 tradeLoop.steps[index].executed = blockchainStep.status === 'Executed';

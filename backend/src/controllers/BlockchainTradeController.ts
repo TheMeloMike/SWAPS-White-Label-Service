@@ -4,7 +4,7 @@ import { PersistentTradeDiscoveryService } from '../services/trade/PersistentTra
 import { TenantManagementService } from '../services/tenant/TenantManagementService';
 import { TradeLoop } from '../types/trade';
 import { LoggingService, Logger } from '../utils/logging/LoggingService';
-import { ErrorResponses } from '../utils/validation/errorResponses';
+import { ErrorResponses } from '../utils/errorResponses';
 import { Keypair, PublicKey } from '@solana/web3.js';
 
 /**
@@ -85,15 +85,18 @@ export class BlockchainTradeController {
             let discoveredTrades: TradeLoop[] = [];
             
             if (request.wallets && request.wallets.length > 0) {
-                // Bulk discovery mode
-                await this.persistentTradeService.bulkSubmitWallets(tenant.id, request.wallets);
-                discoveredTrades = await this.persistentTradeService.discoverTradeLoops(
-                    tenant.id,
-                    {
-                        maxResults: request.settings?.maxResults || 100,
-                        includeCollectionTrades: request.settings?.includeCollectionTrades || true
+                // Bulk discovery mode - update inventory for all wallets
+                for (const wallet of request.wallets) {
+                    if (wallet.nfts && wallet.nfts.length > 0) {
+                        await this.persistentTradeService.updateTenantInventory(
+                            tenant.id,
+                            wallet.walletAddress,
+                            wallet.nfts
+                        );
                     }
-                );
+                }
+                // Get discovered trades for the tenant
+                discoveredTrades = this.persistentTradeService.getActiveLoopsForTenant(tenant.id);
             } else if (request.walletId) {
                 // Single wallet discovery
                 discoveredTrades = await this.persistentTradeService.getTradeLoopsForWallet(
@@ -137,11 +140,10 @@ export class BlockchainTradeController {
                         }
                     }
                 } else {
-                    // Just mark trades as executable
+                    // Just mark trades as ready for execution
                     enhancedTrades = discoveredTrades.map(trade => ({
                         ...trade,
-                        status: 'executable',
-                        blockchainReady: true
+                        status: 'pending' as const
                     }));
                 }
             }

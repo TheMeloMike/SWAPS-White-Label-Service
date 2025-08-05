@@ -70,7 +70,7 @@ router.post('/discovery/trades',
  * - execute: Creates blockchain trade loop and returns account address
  */
 router.post('/trades/execute', 
-    RateLimiters.premium, 
+    RateLimiters.enterprise, 
     tenantAuth.authenticate, 
     blockchainController.executeTradeLoop
 );
@@ -88,7 +88,7 @@ router.post('/trades/execute',
  * }
  */
 router.post('/trades/approve', 
-    RateLimiters.premium, 
+    RateLimiters.enterprise, 
     tenantAuth.authenticate, 
     blockchainController.approveTradeStep
 );
@@ -138,7 +138,7 @@ router.get('/trades/active',
  * GET /api/v1/blockchain/info
  * Get blockchain network and contract information
  */
-router.get('/info', RateLimiters.public, (req: Request, res: Response) => {
+router.get('/info', RateLimiters.standard, (req: Request, res: Response) => {
     res.json({
         success: true,
         blockchain: {
@@ -177,7 +177,7 @@ router.get('/info', RateLimiters.public, (req: Request, res: Response) => {
  * GET /api/v1/blockchain/health
  * Blockchain-specific health check
  */
-router.get('/health', RateLimiters.public, async (req: Request, res: Response) => {
+router.get('/health', RateLimiters.standard, async (req: Request, res: Response) => {
     try {
         // Basic health check
         const healthStatus = {
