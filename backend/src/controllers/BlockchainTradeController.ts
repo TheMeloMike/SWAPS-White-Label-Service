@@ -86,15 +86,12 @@ export class BlockchainTradeController {
             
             if (request.wallets && request.wallets.length > 0) {
                 // Bulk discovery mode - update inventory for all wallets
-                for (const wallet of request.wallets) {
-                    if (wallet.nfts && wallet.nfts.length > 0) {
-                        await this.persistentTradeService.updateTenantInventory(
-                            tenant.id,
-                            wallet.walletAddress,
-                            wallet.nfts
-                        );
-                    }
-                }
+                const abstractWallets = request.wallets.map(wallet => ({
+                    id: wallet.walletAddress,
+                    ownedNFTs: wallet.nfts || [],
+                    wantedNFTs: []
+                }));
+                await this.persistentTradeService.updateTenantInventory(tenant.id, abstractWallets);
                 // Get discovered trades for the tenant
                 discoveredTrades = this.persistentTradeService.getActiveLoopsForTenant(tenant.id);
             } else if (request.walletId) {
@@ -186,7 +183,7 @@ export class BlockchainTradeController {
                 tenantId: req.tenant?.id
             });
 
-            ErrorResponses.sendError(res, ErrorResponses.internalServerError(
+            ErrorResponses.sendError(res, ErrorResponses.internalError(
                 error instanceof Error ? error.message : 'Unknown error occurred'
             ));
             operation.end();
@@ -298,7 +295,7 @@ export class BlockchainTradeController {
                 tenantId: req.tenant?.id
             });
 
-            ErrorResponses.sendError(res, ErrorResponses.internalServerError(
+            ErrorResponses.sendError(res, ErrorResponses.internalError(
                 error instanceof Error ? error.message : 'Trade execution failed'
             ));
             operation.end();
@@ -361,7 +358,7 @@ export class BlockchainTradeController {
                 tenantId: req.tenant?.id
             });
 
-            ErrorResponses.sendError(res, ErrorResponses.internalServerError(
+            ErrorResponses.sendError(res, ErrorResponses.internalError(
                 error instanceof Error ? error.message : 'Trade approval failed'
             ));
             operation.end();
@@ -424,7 +421,7 @@ export class BlockchainTradeController {
                 tenantId: req.tenant?.id
             });
 
-            ErrorResponses.sendError(res, ErrorResponses.internalServerError(
+            ErrorResponses.sendError(res, ErrorResponses.internalError(
                 error instanceof Error ? error.message : 'Failed to get trade status'
             ));
             operation.end();
@@ -485,7 +482,7 @@ export class BlockchainTradeController {
                 tenantId: req.tenant?.id
             });
 
-            ErrorResponses.sendError(res, ErrorResponses.internalServerError(
+            ErrorResponses.sendError(res, ErrorResponses.internalError(
                 error instanceof Error ? error.message : 'Failed to get active trades'
             ));
             operation.end();
