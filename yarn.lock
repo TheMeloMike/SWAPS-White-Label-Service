@@ -2638,10 +2638,10 @@
     "@solana/spl-token-metadata" "^0.1.6"
     buffer "^6.0.3"
 
-"@solana/web3.js@^1.21.0", "@solana/web3.js@^1.32.0", "@solana/web3.js@^1.36.0", "@solana/web3.js@^1.50.1", "@solana/web3.js@^1.56.2", "@solana/web3.js@^1.63.1", "@solana/web3.js@^1.66.2", "@solana/web3.js@^1.88.0", "@solana/web3.js@^1.95.3", "@solana/web3.js@^1.95.5", "@solana/web3.js@^1.98.2":
-  version "1.98.2"
-  resolved "https://registry.npmjs.org/@solana/web3.js/-/web3.js-1.98.2.tgz"
-  integrity sha512-BqVwEG+TaG2yCkBMbD3C4hdpustR4FpuUFRPUmqRZYYlPI9Hg4XMWxHWOWRzHE9Lkc9NDjzXFX7lDXSgzC7R1A==
+"@solana/web3.js@^1.21.0", "@solana/web3.js@^1.32.0", "@solana/web3.js@^1.36.0", "@solana/web3.js@^1.50.1", "@solana/web3.js@^1.56.2", "@solana/web3.js@^1.63.1", "@solana/web3.js@^1.66.2", "@solana/web3.js@^1.88.0", "@solana/web3.js@^1.95.3", "@solana/web3.js@^1.95.5", "@solana/web3.js@^1.98.4":
+  version "1.98.4"
+  resolved "https://registry.npmjs.org/@solana/web3.js/-/web3.js-1.98.4.tgz"
+  integrity sha512-vv9lfnvjUsRiq//+j5pBdXig0IQdtzA0BRZ3bXEP4KaIyF1CcaydWqgyzQgfZMNIsWNWmG+AUHwPy4AHOD6gpw==
   dependencies:
     "@babel/runtime" "^7.25.0"
     "@noble/curves" "^1.4.2"
@@ -3706,6 +3706,11 @@ borsh@^0.7.0:
     bn.js "^5.2.0"
     bs58 "^4.0.0"
     text-encoding-utf-8 "^1.0.2"
+
+borsh@^2.0.0:
+  version "2.0.0"
+  resolved "https://registry.npmjs.org/borsh/-/borsh-2.0.0.tgz"
+  integrity sha512-kc9+BgR3zz9+cjbwM8ODoUB4fs3X3I5A/HtX7LZKxCLaMrEeDFoBpnhZY//DTS1VZBSs6S5v46RZRbZjRFspEg==
 
 brace-expansion@^1.1.7:
   version "1.1.11"
@@ -8056,7 +8061,7 @@ swagger-ui-express@^5.0.1:
   dependencies:
     "@metaplex-foundation/js" "^0.20.1"
     "@solana/spl-token" "^0.4.0"
-    "@solana/web3.js" "^1.98.2"
+    "@solana/web3.js" "^1.98.4"
     "@types/bcryptjs" "^2.4.6"
     "@types/jsonwebtoken" "^9.0.10"
     "@types/swagger-jsdoc" "^6.0.4"

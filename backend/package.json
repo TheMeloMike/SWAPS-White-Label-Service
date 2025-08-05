@@ -20,7 +20,7 @@
   "dependencies": {
     "@metaplex-foundation/js": "^0.20.1",
     "@solana/spl-token": "^0.4.0",
-    "@solana/web3.js": "^1.98.2",
+    "@solana/web3.js": "^1.98.4",
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/swagger-jsdoc": "^6.0.4",
@@ -29,6 +29,7 @@
     "axios": "^1.9.0",
     "bcryptjs": "^3.0.2",
     "bloom-filters": "^3.0.0",
+    "borsh": "^2.0.0",
     "cheerio": "^1.1.0",
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
@@ -76,12 +77,10 @@
     "ts-node": "^10.9.0",
     "typescript": "^5.9.2"
   },
-  "_moduleAliases": {
-    "@": "dist",
-    "@services": "dist/services",
-    "@controllers": "dist/controllers",
-    "@types": "dist/types",
-    "@lib": "dist/lib",
-    "@utils": "dist/utils"
-  }
+  "directories": {
+    "test": "tests"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
 }

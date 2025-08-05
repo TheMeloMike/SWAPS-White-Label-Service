@@ -1,0 +1,23 @@
+[package]
+name = "swaps_deploy"
+version = "0.1.0"
+description = "Created with Anchor"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "swaps_deploy"
+
+[features]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+cpi = ["no-entrypoint"]
+default = []
+
+[dependencies]
+solana-program = "=1.16.0"
+borsh = "0.10.3"
+thiserror = "1.0.50"
+spl-token = { version = "3.0.0", features = ["no-entrypoint"] }
+spl-associated-token-account = { version = "1.0.5", features = ["no-entrypoint"] }

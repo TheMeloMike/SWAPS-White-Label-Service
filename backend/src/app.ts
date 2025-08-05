@@ -66,6 +66,7 @@ import { BackgroundTradeDiscoveryService } from './services/trade/BackgroundTrad
 
 // Import white label routes
 import whiteLabelApiRoutes from './routes/whiteLabelApi.routes';
+import blockchainRoutes from './routes/blockchain.routes';
 import healthRoutes from './routes/health.routes';
 import docsRoutes from './routes/docs.routes';
 import monitoringRoutes, { trackRequests } from './routes/monitoring.routes';
@@ -145,6 +146,7 @@ app.use('/api', detectApiVersion);
 
 // API Routes with specific rate limits
 app.use('/api/v1', whiteLabelApiRoutes);
+app.use('/api/v1/blockchain', blockchainRoutes); // Blockchain integration endpoints
 app.use('/health', healthRoutes);
 app.use('/monitoring', monitoringRoutes); // Enterprise monitoring endpoints
 app.use('/security', securityRoutes); // Security management endpoints (admin only)
@@ -171,10 +173,17 @@ app.get('/', (req, res) => {
     status: 'operational',
     endpoints: {
       api: '/api/v1',
+      blockchain: '/api/v1/blockchain',
       health: '/health',
       documentation: 'https://desert-adjustment-111.notion.site/SWAPS-White-Label-Documentation-2409b1fc08278068a469c60e33a105d8'
     },
-    message: '🔄 SWAPS: Where NFTs find their perfect match',
+    blockchain: {
+      network: 'Solana Devnet',
+      programId: '8QhM7mdLqs2mwuNwY4R4UAGiXpLyMg28aih5mZKU2XFD',
+      capabilities: 'Multi-party atomic NFT swaps',
+      status: 'Production Ready ✅'
+    },
+    message: '🔄 SWAPS: Where NFTs find their perfect match through multi-party blockchain trading',
     timestamp: new Date().toISOString()
   });
 });

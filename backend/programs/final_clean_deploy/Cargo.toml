@@ -1,17 +1,13 @@
 [package]
-name = "solana-nft-swap"
+name = "swaps-nft-trading"
 version = "0.1.0"
 edition = "2021"
-resolver = "1"
 
 [lib]
 crate-type = ["cdylib", "lib"]
 
 [features]
 no-entrypoint = []
-no-idl = []
-no-log-ix-name = []
-cpi = ["no-entrypoint"]
 default = []
 
 [dependencies]
@@ -21,4 +17,3 @@ thiserror = "1.0.50"
 spl-token = { version = "4.0.0", features = ["no-entrypoint"] }
 spl-associated-token-account = { version = "2.3.0", features = ["no-entrypoint"] }
 ahash = "=0.8.7"
- 
