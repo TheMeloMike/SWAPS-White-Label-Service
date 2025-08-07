@@ -854,7 +854,7 @@ export class PersistentTradeDiscoveryService extends EventEmitter {
   /**
    * Helper methods
    */
-  private getTenantGraph(tenantId: string): TenantTradeGraph {
+  public getTenantGraph(tenantId: string): TenantTradeGraph {
     const graph = this.tenantGraphs.get(tenantId);
     if (!graph) {
       throw new Error(`Tenant graph not found: ${tenantId}`);
