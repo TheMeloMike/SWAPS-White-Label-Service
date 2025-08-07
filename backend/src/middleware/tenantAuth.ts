@@ -27,6 +27,25 @@ export class TenantAuthMiddleware {
   /**
    * Middleware function to authenticate tenant requests
    */
+  /**
+   * Extract API key from request headers
+   */
+  private extractApiKey(req: AuthenticatedRequest): string | undefined {
+    // Try X-API-Key header first (documented format)
+    const xApiKey = req.headers['x-api-key'] as string;
+    if (xApiKey) {
+      return xApiKey;
+    }
+    
+    // Fallback to Authorization Bearer format
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      return authHeader.substring(7); // Remove 'Bearer ' prefix
+    }
+    
+    return undefined;
+  }
+
   public authenticate = async (
     req: AuthenticatedRequest, 
     res: Response, 
@@ -35,20 +54,8 @@ export class TenantAuthMiddleware {
     const operation = this.logger.operation('authenticateRequest');
     
     try {
-      // Extract API key from either X-API-Key header (preferred) or Authorization header (legacy)
-      let apiKey: string | undefined;
-      
-      // Try X-API-Key header first (documented format)
-      const xApiKey = req.headers['x-api-key'] as string;
-      if (xApiKey) {
-        apiKey = xApiKey;
-      } else {
-        // Fallback to Authorization Bearer format
-        const authHeader = req.headers.authorization;
-        if (authHeader && authHeader.startsWith('Bearer ')) {
-          apiKey = authHeader.substring(7); // Remove 'Bearer ' prefix
-        }
-      }
+      // Extract API key from headers
+      const apiKey = this.extractApiKey(req);
       
       if (!apiKey) {
         operation.warn('Missing API key', {
@@ -179,7 +186,7 @@ export class TenantAuthMiddleware {
       req.tenant = tenant;
       
       // Update usage tracking
-      await this.tenantService.trackApiUsage(tenant.id, req.path);
+      await this.tenantService.recordApiKeyUsage(tenant.id, 'general');
       
       operation.info('Optional authentication successful', {
         tenantId: tenant.id,

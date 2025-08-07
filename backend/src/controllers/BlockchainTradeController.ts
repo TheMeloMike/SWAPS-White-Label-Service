@@ -134,7 +134,7 @@ export class BlockchainTradeController {
             }
 
             // Step 2: Enhance with blockchain capabilities based on mode
-            let blockchainTrades: BlockchainTradeLoop[] = [];
+            let blockchainTrades: any[] = []; // Support both Ethereum and Solana trade loops
             let enhancedTrades = discoveredTrades;
 
             if (request.mode === 'executable' || request.mode === 'full_blockchain') {

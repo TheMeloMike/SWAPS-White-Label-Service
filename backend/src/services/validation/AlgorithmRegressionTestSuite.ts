@@ -406,29 +406,35 @@ export class AlgorithmRegressionTestSuite extends EventEmitter {
        id: tenantId,
        name: 'Test Tenant',
        apiKey: 'test-key',
-       settings: {
-         algorithm: {
-           maxDepth: 10,
-           minEfficiency: 0.6,
-           maxLoopsPerRequest: 100,
-           enableCollectionTrading: false
-         },
-         rateLimits: {
-           discoveryRequestsPerMinute: 1000,
-           nftSubmissionsPerDay: 10000,
-           webhookCallsPerMinute: 100
-         },
-         security: {
-           maxNFTsPerWallet: 1000,
-           maxWantsPerWallet: 100,
-           minNFTValueUSD: 0,
-           blacklistedCollections: []
-         },
-         webhooks: {
-           tradeDiscoveryUrl: undefined,
-           enabled: false
-         }
-       },
+             settings: {
+        blockchain: {
+          preferred: 'solana',
+          allowSwitching: false,
+          ethereumNetwork: 'sepolia',
+          solanaNetwork: 'devnet'
+        },
+        algorithm: {
+          maxDepth: 10,
+          minEfficiency: 0.6,
+          maxLoopsPerRequest: 100,
+          enableCollectionTrading: false
+        },
+        rateLimits: {
+          discoveryRequestsPerMinute: 1000,
+          nftSubmissionsPerDay: 10000,
+          webhookCallsPerMinute: 100
+        },
+        security: {
+          maxNFTsPerWallet: 1000,
+          maxWantsPerWallet: 100,
+          minNFTValueUSD: 0,
+          blacklistedCollections: []
+        },
+        webhooks: {
+          tradeDiscoveryUrl: undefined,
+          enabled: false
+        }
+      },
        createdAt: new Date()
      };
     
