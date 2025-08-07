@@ -1,6 +1,7 @@
 import { ethers } from 'ethers';
 import { TradeLoop } from '../../types/trade';
 import { LoggingService, Logger } from '../../utils/logging/LoggingService';
+import { WalletAddressMappingService } from './WalletAddressMappingService';
 
 /**
  * Ethereum Transaction Preparer Service
@@ -46,6 +47,7 @@ export class EthereumTransactionPreparer {
     private provider: ethers.Provider;
     private contractInterface: ethers.Interface;
     private contractAddress: string;
+    private walletMapping: WalletAddressMappingService;
 
     private constructor() {
         this.logger = LoggingService.getInstance().createLogger('EthereumTransactionPreparer');
@@ -53,6 +55,9 @@ export class EthereumTransactionPreparer {
         // Initialize provider
         const rpcUrl = process.env.ETHEREUM_RPC_URL || 'https://ethereum-sepolia-rpc.publicnode.com';
         this.provider = new ethers.JsonRpcProvider(rpcUrl);
+        
+        // Initialize wallet mapping service
+        this.walletMapping = WalletAddressMappingService.getInstance();
         
         // Initialize contract interface
         this.contractInterface = new ethers.Interface(SWAP_CONTRACT_ABI);
@@ -73,7 +78,8 @@ export class EthereumTransactionPreparer {
      */
     public async prepareCreateSwap(
         tradeLoop: TradeLoop,
-        userAddress: string
+        userAddress: string,
+        tenantId: string
     ): Promise<TransactionPreparationResult> {
         const operation = this.logger.operation('prepareCreateSwap');
         
@@ -81,18 +87,43 @@ export class EthereumTransactionPreparer {
             // Generate swap ID
             const swapId = ethers.id(tradeLoop.id);
             
-            // Build participants array
+            // Extract all wallet IDs from trade loop steps
+            const walletIds = [...new Set([
+                ...tradeLoop.steps.map(step => step.from),
+                ...tradeLoop.steps.map(step => step.to)
+            ])];
+            
+            // Get wallet addresses for all participants
+            operation.info('Resolving wallet addresses for trade participants', { walletIds });
+            const walletAddresses = await this.walletMapping.getWalletAddresses(tenantId, walletIds, 'ethereum');
+            
+            // Validate that all wallet addresses were resolved
+            const missingAddresses = walletIds.filter(walletId => !walletAddresses.has(walletId));
+            if (missingAddresses.length > 0) {
+                throw new Error(`Could not resolve Ethereum addresses for wallets: ${missingAddresses.join(', ')}`);
+            }
+            
+            operation.info('Successfully resolved all wallet addresses', { 
+                resolved: Array.from(walletAddresses.entries())
+            });
+            
+            // Build participants array with proper Ethereum addresses
             const participants = tradeLoop.steps.map(step => {
+                const walletAddress = walletAddresses.get(step.from);
+                if (!walletAddress) {
+                    throw new Error(`No Ethereum address found for wallet ID: ${step.from}`);
+                }
+                
                 const givingNFTs = step.nfts.map(nft => ({
                     contractAddress: nft.address || '0x0000000000000000000000000000000000000000',
                     tokenId: '1', // Default token ID, should be enhanced to extract from nft.address
-                    currentOwner: step.from,
+                    currentOwner: walletAddress, // Use resolved Ethereum address
                     isERC1155: false,
                     amount: 1
                 }));
                 
                 return {
-                    wallet: step.from,
+                    wallet: walletAddress, // Use resolved Ethereum address
                     givingNFTs,
                     receivingNFTs: [], // Will be filled based on trade logic
                     hasApproved: false

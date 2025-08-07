@@ -72,7 +72,8 @@ export class BlockchainTradeControllerV2 {
                 case 'create':
                     result = await this.transactionPreparer.prepareCreateSwap(
                         targetTrade,
-                        request.userAddress
+                        request.userAddress,
+                        tenant.id
                     );
                     break;
 
