@@ -72,12 +72,12 @@ contract MultiPartyNFTSwap is
     mapping(address => bytes32[]) public userActiveSwaps;
     
     // Emergency controls
-    uint256 public maxParticipants = 10;
-    uint256 public maxSwapDuration = 24 hours;
-    uint256 public minSwapDuration = 1 hours;
+    uint256 public maxParticipants;
+    uint256 public maxSwapDuration;
+    uint256 public minSwapDuration;
     
     // Fee structure (for future monetization)
-    uint256 public platformFeePercentage = 0; // Start with 0% fee
+    uint256 public platformFeePercentage; // Start with 0% fee
     address public feeRecipient;
     
     // ============ EVENTS ============
@@ -159,7 +159,7 @@ contract MultiPartyNFTSwap is
     
     // ============ MODIFIERS ============
     
-    modifier swapExists(bytes32 swapId) {
+    modifier swapMustExist(bytes32 swapId) {
         require(swapExists[swapId], "Swap does not exist");
         _;
     }
@@ -186,6 +186,12 @@ contract MultiPartyNFTSwap is
         
         _transferOwnership(_owner);
         feeRecipient = _feeRecipient;
+        
+        // Initialize contract parameters
+        maxParticipants = 10;
+        maxSwapDuration = 24 hours;
+        minSwapDuration = 1 hours;
+        platformFeePercentage = 0; // Start with 0% fee
     }
     
     // ============ MAIN FUNCTIONS ============
@@ -244,7 +250,7 @@ contract MultiPartyNFTSwap is
      */
     function approveSwap(bytes32 swapId) 
         external 
-        swapExists(swapId)
+        swapMustExist(swapId)
         swapNotExpired(swapId)
         validParticipant(swapId, msg.sender)
         nonReentrant
@@ -276,7 +282,7 @@ contract MultiPartyNFTSwap is
      */
     function executeSwap(bytes32 swapId)
         external
-        swapExists(swapId)
+        swapMustExist(swapId)
         swapNotExpired(swapId)
         nonReentrant
         whenNotPaused
@@ -309,7 +315,7 @@ contract MultiPartyNFTSwap is
      */
     function cancelSwap(bytes32 swapId, string calldata reason)
         external
-        swapExists(swapId)
+        swapMustExist(swapId)
         nonReentrant
     {
         Swap storage swap = swaps[swapId];
@@ -726,7 +732,7 @@ contract MultiPartyNFTSwap is
     
     // ============ UPGRADE FUNCTIONS ============
     
-    function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
+    function _authorizeUpgrade(address newImplementation) internal onlyOwner {}
     
     // ============ INTERFACE IMPLEMENTATIONS ============
     
@@ -774,7 +780,7 @@ contract MultiPartyNFTSwap is
     /**
      * @dev See {IERC165-supportsInterface}
      */
-    function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
+    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC165, IERC165) returns (bool) {
         return
             interfaceId == type(IERC721Receiver).interfaceId ||
             interfaceId == type(IERC1155Receiver).interfaceId ||

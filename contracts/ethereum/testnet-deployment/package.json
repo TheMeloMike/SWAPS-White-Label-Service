@@ -1,0 +1,71 @@
+{
+  "name": "swaps-ethereum-testnet",
+  "version": "1.1.0-audited",
+  "description": "SWAPS Ethereum Multi-Party NFT Swap Contract - Testnet Deployment",
+  "main": "deploy-testnet.js",
+  "scripts": {
+    "deploy:sepolia": "npx hardhat run deploy-testnet.js --network sepolia",
+    "deploy:goerli": "npx hardhat run deploy-testnet.js --network goerli", 
+    "deploy:mumbai": "npx hardhat run deploy-testnet.js --network mumbai",
+    "deploy:bsc-testnet": "npx hardhat run deploy-testnet.js --network bscTestnet",
+    "deploy:local": "npx hardhat run deploy-testnet.js --network hardhat",
+    "test": "npx hardhat test",
+    "test:gas": "REPORT_GAS=true npx hardhat test",
+    "compile": "npx hardhat compile",
+    "clean": "npx hardhat clean",
+    "verify:sepolia": "npx hardhat verify --network sepolia",
+    "verify:goerli": "npx hardhat verify --network goerli",
+    "verify:mumbai": "npx hardhat verify --network mumbai",
+    "node": "npx hardhat node",
+    "console:sepolia": "npx hardhat console --network sepolia",
+    "console:goerli": "npx hardhat console --network goerli",
+    "balance": "npx hardhat balance --account",
+    "accounts": "npx hardhat accounts",
+    "size": "npx hardhat size-contracts",
+    "coverage": "npx hardhat coverage"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "@nomicfoundation/hardhat-chai-matchers": "^2.0.0",
+    "@nomicfoundation/hardhat-ethers": "^3.0.0",
+    "@nomicfoundation/hardhat-network-helpers": "^1.0.0",
+    "@nomicfoundation/hardhat-verify": "^2.0.0",
+    "@openzeppelin/hardhat-upgrades": "^3.0.0",
+    "@typechain/ethers-v6": "^0.5.0",
+    "@typechain/hardhat": "^9.0.0",
+    "@types/chai": "^4.2.0",
+    "@types/mocha": ">=9.1.0",
+    "chai": "^4.2.0",
+    "ethers": "^6.4.0",
+    "hardhat": "^2.19.0",
+    "hardhat-gas-reporter": "^1.0.8",
+    "solidity-coverage": "^0.8.0",
+    "typechain": "^8.3.0",
+    "hardhat-contract-sizer": "^2.8.0",
+    "dotenv": "^16.0.0"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^4.8.0",
+    "@openzeppelin/contracts-upgradeable": "^4.8.0"
+  },
+  "keywords": [
+    "ethereum",
+    "smart-contracts",
+    "nft",
+    "swap",
+    "multi-party",
+    "defi",
+    "testnet",
+    "solidity"
+  ],
+  "author": "SWAPS Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/swaps/ethereum-contracts"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  }
+}

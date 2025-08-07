@@ -55,14 +55,17 @@ router.post('/discovery/trades',
 
 /**
  * POST /api/v1/blockchain/trades/execute
- * Execute a discovered trade loop on the Solana blockchain
+ * Execute a discovered trade loop on Ethereum or Solana blockchain
  * 
  * Body:
  * {
  *   "tradeLoopId": "string",               // ID from discovery response
  *   "mode": "simulate|execute",            // Simulation or actual execution
  *   "walletPublicKey": "string",          // Optional: executing wallet
- *   "customTimeoutHours": 24              // Optional: custom timeout (default 24h)
+ *   "customTimeoutHours": 24,             // Optional: custom timeout (default 24h)
+ *   "settings": {
+ *     "blockchainFormat": "ethereum|solana" // Optional: force specific blockchain
+ *   }
  * }
  * 
  * Response:
@@ -272,7 +275,7 @@ router.get('/docs', (req: Request, res: Response) => {
             },
             step2: {
                 endpoint: 'POST /api/v1/blockchain/trades/execute',
-                description: 'Create trade loop on Solana blockchain',
+                description: 'Create trade loop on preferred blockchain (Ethereum/Solana)',
                 mode: 'execute',
                 output: 'Blockchain account address and transaction hash'
             },

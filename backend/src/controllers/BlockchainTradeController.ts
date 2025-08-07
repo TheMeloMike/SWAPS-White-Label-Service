@@ -1,11 +1,13 @@
 import { Request, Response } from 'express';
 import { SolanaIntegrationService, BlockchainTradeLoop, SolanaConfig } from '../services/blockchain/SolanaIntegrationService';
+import { EthereumIntegrationService, EthereumConfig } from '../services/blockchain/EthereumIntegrationService';
 import { PersistentTradeDiscoveryService } from '../services/trade/PersistentTradeDiscoveryService';
 import { TenantManagementService } from '../services/tenant/TenantManagementService';
 import { TradeLoop } from '../types/trade';
 import { LoggingService, Logger } from '../utils/logging/LoggingService';
 import { ErrorResponses } from '../utils/errorResponses';
 import { Keypair, PublicKey } from '@solana/web3.js';
+import { ethers } from 'ethers';
 
 /**
  * Enhanced Trade Controller with Blockchain Integration
@@ -18,6 +20,9 @@ export interface TradeExecutionRequest {
     mode: 'simulate' | 'execute';
     walletPublicKey?: string;
     customTimeoutHours?: number;
+    settings?: {
+        blockchainFormat?: 'ethereum' | 'solana';
+    };
 }
 
 export interface TradeApprovalRequest {
@@ -25,6 +30,9 @@ export interface TradeApprovalRequest {
     stepIndex: number;
     walletPublicKey: string;
     signature?: string; // User's signature for approval
+    settings?: {
+        blockchainFormat?: 'ethereum' | 'solana';
+    };
 }
 
 export interface BlockchainTradeDiscoveryRequest {
@@ -44,6 +52,7 @@ export class BlockchainTradeController {
     private persistentTradeService: PersistentTradeDiscoveryService;
     private tenantService: TenantManagementService;
     private solanaService: SolanaIntegrationService;
+    private ethereumService: EthereumIntegrationService | null = null;
 
     constructor() {
         this.logger = LoggingService.getInstance().createLogger('BlockchainTradeController');
@@ -74,6 +83,9 @@ export class BlockchainTradeController {
         }
         
         this.solanaService = SolanaIntegrationService.getInstance(solanaConfig);
+        
+        // Initialize Ethereum service if configuration is available
+        this.initializeEthereumService();
         
         // Set up event listeners for real-time updates
         this.setupEventListeners();
@@ -273,7 +285,16 @@ export class BlockchainTradeController {
             }
 
             // Execute mode - actually create blockchain trade loop
-            const blockchainTrade = await this.solanaService.createBlockchainTradeLoop(targetTrade);
+            // Determine which blockchain service to use
+            const blockchainType = this.determineBlockchainType(req, req.body);
+            const blockchainService = this.getBlockchainService(blockchainType);
+            
+            operation.info('Executing trade on blockchain', {
+                blockchainType,
+                serviceName: blockchainService.constructor.name
+            });
+            
+            const blockchainTrade = await blockchainService.createBlockchainTradeLoop(targetTrade);
 
             operation.info('Trade loop execution initiated', {
                 tenantId: tenant.id,
@@ -335,15 +356,33 @@ export class BlockchainTradeController {
 
             const request: TradeApprovalRequest = req.body;
             
-            // In production, would validate user's wallet signature
-            // For now, simulate approval
-            const mockKeypair = Keypair.generate(); // Would use actual user keypair
+            // Determine which blockchain service to use
+            const blockchainType = this.determineBlockchainType(req, req.body);
+            const blockchainService = this.getBlockchainService(blockchainType);
             
-            const signature = await this.solanaService.approveTradeStep(
-                request.tradeLoopId,
-                request.stepIndex,
-                mockKeypair
-            );
+            operation.info('Approving trade step on blockchain', {
+                blockchainType,
+                serviceName: blockchainService.constructor.name
+            });
+            
+            let signature: string;
+            
+            if (blockchainType === 'ethereum' && blockchainService instanceof EthereumIntegrationService) {
+                // For Ethereum, create a mock wallet or use configured wallet
+                const mockWallet = ethers.Wallet.createRandom(); // Would use actual user wallet
+                signature = await blockchainService.approveTradeStep(
+                    request.tradeLoopId,
+                    mockWallet
+                );
+            } else {
+                // For Solana, use Keypair
+                const mockKeypair = Keypair.generate(); // Would use actual user keypair
+                signature = await (blockchainService as SolanaIntegrationService).approveTradeStep(
+                    request.tradeLoopId,
+                    request.stepIndex,
+                    mockKeypair
+                );
+            }
 
             operation.info('Trade step approved', {
                 tenantId: tenant.id,
@@ -360,7 +399,7 @@ export class BlockchainTradeController {
                     stepIndex: request.stepIndex,
                     walletPublicKey: request.walletPublicKey,
                     signature,
-                    explorerUrl: this.solanaService.getExplorerUrl(signature),
+                    explorerUrl: blockchainService.getExplorerUrl(signature),
                     timestamp: new Date().toISOString()
                 }
             });
@@ -544,5 +583,106 @@ export class BlockchainTradeController {
         if (executedSteps > 0) return 75 + (executedSteps / totalSteps) * 25;
         if (approvedSteps > 0) return 25 + (approvedSteps / totalSteps) * 50;
         return 10; // Created but not populated
+    }
+
+    /**
+     * Initialize Ethereum service with environment configuration
+     * Only creates service if all required config is available
+     */
+    private initializeEthereumService(): void {
+        try {
+            // Check for required Ethereum environment variables
+            const ethereumRpcUrl = process.env.ETHEREUM_RPC_URL;
+            const ethereumContractAddress = process.env.ETHEREUM_CONTRACT_ADDRESS;
+            
+            if (!ethereumRpcUrl || !ethereumContractAddress) {
+                this.logger.info('Ethereum service not initialized - missing required environment variables', {
+                    hasRpcUrl: !!ethereumRpcUrl,
+                    hasContractAddress: !!ethereumContractAddress,
+                    note: 'Solana-only mode active'
+                });
+                return;
+            }
+
+            const ethereumConfig: EthereumConfig = {
+                rpcUrl: ethereumRpcUrl,
+                contractAddress: ethereumContractAddress,
+                network: (process.env.ETHEREUM_NETWORK as 'mainnet' | 'sepolia' | 'goerli') || 'sepolia'
+            };
+
+            // Add payer wallet if private key is provided
+            if (process.env.ETHEREUM_PRIVATE_KEY) {
+                try {
+                    ethereumConfig.payerWallet = new ethers.Wallet(process.env.ETHEREUM_PRIVATE_KEY);
+                    this.logger.info('Loaded Ethereum payer wallet from environment', {
+                        address: ethereumConfig.payerWallet.address
+                    });
+                } catch (error: any) {
+                    this.logger.warn('Could not parse Ethereum private key from environment', { 
+                        error: error.message 
+                    });
+                }
+            }
+
+            // Initialize the Ethereum service
+            this.ethereumService = EthereumIntegrationService.getInstance(ethereumConfig);
+            
+            this.logger.info('Ethereum integration service initialized successfully', {
+                network: ethereumConfig.network,
+                contractAddress: ethereumConfig.contractAddress,
+                mode: 'Multi-chain ready'
+            });
+            
+        } catch (error: any) {
+            this.logger.error('Failed to initialize Ethereum service', { error: error.message });
+            this.ethereumService = null;
+        }
+    }
+
+    /**
+     * Get the appropriate blockchain service based on tenant preferences or request parameters
+     */
+    private getBlockchainService(blockchainType?: string): SolanaIntegrationService | EthereumIntegrationService {
+        // Default to Ethereum if available, otherwise Solana
+        const preferredBlockchain = blockchainType || 'ethereum';
+        
+        if (preferredBlockchain === 'ethereum' && this.ethereumService) {
+            this.logger.debug('Using Ethereum blockchain service');
+            return this.ethereumService;
+        } else if (preferredBlockchain === 'solana') {
+            this.logger.debug('Using Solana blockchain service');
+            return this.solanaService;
+        } else {
+            // Fallback logic
+            if (this.ethereumService) {
+                this.logger.info('Defaulting to Ethereum blockchain service');
+                return this.ethereumService;
+            } else {
+                this.logger.info('Defaulting to Solana blockchain service');
+                return this.solanaService;
+            }
+        }
+    }
+
+    /**
+     * Determine blockchain type from request or tenant settings
+     */
+    private determineBlockchainType(req: Request & { tenant?: any }, requestBody?: any): string {
+        // Priority 1: Explicit request parameter
+        if (requestBody?.settings?.blockchainFormat) {
+            return requestBody.settings.blockchainFormat;
+        }
+        
+        // Priority 2: Tenant preference (could be added to tenant model)
+        if (req.tenant?.preferredBlockchain) {
+            return req.tenant.preferredBlockchain;
+        }
+        
+        // Priority 3: Global default based on available services
+        if (this.ethereumService) {
+            return 'ethereum';
+        }
+        
+        return 'solana';
     }
 }

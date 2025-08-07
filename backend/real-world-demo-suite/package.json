@@ -1,0 +1,47 @@
+{
+  "name": "swaps-real-world-demo-suite",
+  "version": "1.0.0",
+  "description": "Production-ready demonstration of SWAPS multi-party NFT trading with real wallets",
+  "main": "index.js",
+  "scripts": {
+    "demo:wallet-detection": "node real_wallet_nft_detector.js",
+    "demo:signature-verification": "node real_wallet_signature_handler.js",
+    "demo:full": "echo 'Full demo coming in Phase 3' && npm run demo:wallet-detection && npm run demo:signature-verification",
+    "test:integration": "node integration-tests/run-all-tests.js",
+    "dev:frontend": "cd components && npm run dev",
+    "build:docs": "node scripts/generate-docs.js"
+  },
+  "keywords": [
+    "solana",
+    "nft",
+    "trading",
+    "multi-party",
+    "swap",
+    "blockchain",
+    "defi",
+    "wallet-integration"
+  ],
+  "author": "SWAPS Team",
+  "license": "MIT",
+  "dependencies": {
+    "@solana/web3.js": "^1.95.0",
+    "@solana/spl-token": "^0.4.8",
+    "@solana/wallet-adapter-base": "^0.9.23",
+    "@solana/wallet-adapter-react": "^0.15.35",
+    "@solana/wallet-adapter-react-ui": "^0.9.35",
+    "@solana/wallet-adapter-wallets": "^0.19.32",
+    "nacl": "^1.0.4",
+    "axios": "^1.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/swaps/real-world-demo-suite.git"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

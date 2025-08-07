@@ -1,0 +1,14 @@
+{
+  "alice": {
+    "address": "0x78c9730c9A8A645bD3022771F9509e65DCd3a499",
+    "privateKey": "0xd88587c0bdaebfc638f5560b3626f5be84b0303e78605ec141acde3f1e56f673"
+  },
+  "bob": {
+    "address": "0xf65c05a521BAD596686aBf74c299fCa474D2b19b",
+    "privateKey": "0x97ad7f5e5205d492d4a91d4608d1ba60f1b1eddf02bb7824c3654e1a3ae8174e"
+  },
+  "carol": {
+    "address": "0xAd6bee0e55f173419897C1a94C354C49094A4f49",
+    "privateKey": "0x7d1608d670cbbd8e83815d6b1fbaf66eee6a747693e017dc0f6d8f72758cad04"
+  }
+}
