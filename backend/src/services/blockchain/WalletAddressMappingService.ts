@@ -66,6 +66,54 @@ export class WalletAddressMappingService {
     }
 
     /**
+     * Get NFT contract information for trade loop execution
+     */
+    public async getNFTContractInfo(tenantId: string, nftIds: string[], blockchainType: 'ethereum' | 'solana' = 'ethereum'): Promise<Map<string, { contractAddress: string; tokenId: string }>> {
+        const operation = this.logger.operation('getNFTContractInfo');
+        
+        try {
+            const contractInfo = new Map<string, { contractAddress: string; tokenId: string }>();
+            
+            // Get tenant graph data
+            const tenantGraph = this.tradeService.getTenantGraph(tenantId);
+            if (!tenantGraph) {
+                operation.warn('Tenant graph not found', { tenantId });
+                return contractInfo;
+            }
+
+            // Extract contract info from NFT platformData
+            for (const nftId of nftIds) {
+                const nft = tenantGraph.nfts.get(nftId);
+                if (nft?.platformData) {
+                    const contractAddress = nft.platformData.contractAddress;
+                    const tokenId = nft.platformData.tokenId;
+                    
+                    if (contractAddress && this.isValidAddress(contractAddress, blockchainType)) {
+                        contractInfo.set(nftId, {
+                            contractAddress,
+                            tokenId: tokenId || '1'
+                        });
+                    }
+                }
+            }
+
+            operation.info('Retrieved NFT contract information', { 
+                requested: nftIds.length, 
+                found: contractInfo.size,
+                contractInfo: Array.from(contractInfo.entries())
+            });
+
+            return contractInfo;
+
+        } catch (error) {
+            operation.error('Failed to get NFT contract info', { error: (error as Error).message, nftIds, tenantId });
+            throw error;
+        } finally {
+            operation.end();
+        }
+    }
+
+    /**
      * Get multiple wallet addresses for efficient batch processing
      */
     public async getWalletAddresses(tenantId: string, walletIds: string[], blockchainType: 'ethereum' | 'solana' = 'ethereum'): Promise<Map<string, string>> {

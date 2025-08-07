@@ -103,8 +103,20 @@ export class EthereumTransactionPreparer {
                 throw new Error(`Could not resolve Ethereum addresses for wallets: ${missingAddresses.join(', ')}`);
             }
             
-            operation.info('Successfully resolved all wallet addresses', { 
-                resolved: Array.from(walletAddresses.entries())
+            // Get NFT contract information for all NFTs in the trade loop
+            const allNftIds = tradeLoop.steps.flatMap(step => step.nfts.map(nft => nft.address));
+            operation.info('Resolving NFT contract addresses', { nftIds: allNftIds });
+            const nftContractInfo = await this.walletMapping.getNFTContractInfo(tenantId, allNftIds, 'ethereum');
+            
+            // Validate that all NFT contract info was resolved
+            const missingContracts = allNftIds.filter(nftId => !nftContractInfo.has(nftId));
+            if (missingContracts.length > 0) {
+                throw new Error(`Could not resolve contract addresses for NFTs: ${missingContracts.join(', ')}`);
+            }
+            
+            operation.info('Successfully resolved all addresses', { 
+                walletAddresses: Array.from(walletAddresses.entries()),
+                nftContracts: Array.from(nftContractInfo.entries())
             });
             
             // Build participants array with proper Ethereum addresses
@@ -114,13 +126,20 @@ export class EthereumTransactionPreparer {
                     throw new Error(`No Ethereum address found for wallet ID: ${step.from}`);
                 }
                 
-                const givingNFTs = step.nfts.map(nft => ({
-                    contractAddress: nft.address || '0x0000000000000000000000000000000000000000',
-                    tokenId: '1', // Default token ID, should be enhanced to extract from nft.address
-                    currentOwner: walletAddress, // Use resolved Ethereum address
-                    isERC1155: false,
-                    amount: 1
-                }));
+                const givingNFTs = step.nfts.map(nft => {
+                    const contractInfo = nftContractInfo.get(nft.address);
+                    if (!contractInfo) {
+                        throw new Error(`No contract info found for NFT: ${nft.address}`);
+                    }
+                    
+                    return {
+                        contractAddress: contractInfo.contractAddress,
+                        tokenId: contractInfo.tokenId,
+                        currentOwner: walletAddress, // Use resolved Ethereum address
+                        isERC1155: false,
+                        amount: 1
+                    };
+                });
                 
                 return {
                     wallet: walletAddress, // Use resolved Ethereum address
