@@ -1,4 +1,4 @@
-import { ethers, Contract, Wallet } from 'ethers';
+import { ethers, Contract, Wallet, HDNodeWallet } from 'ethers';
 import { TradeLoop } from '../../types/trade';
 import { LoggingService, Logger } from '../../utils/logging/LoggingService';
 import { EventEmitter } from 'events';
@@ -67,7 +67,7 @@ const SWAP_CONTRACT_ABI = [
 export class EthereumIntegrationService extends EventEmitter {
     private static instance: EthereumIntegrationService;
     private provider: ethers.Provider;
-    private contract: Contract;
+    private contract: any; // Contract with dynamic ABI
     private logger: Logger;
     private activeTradeLoops: Map<string, EthereumBlockchainTradeLoop> = new Map();
     private network: string;
@@ -104,7 +104,7 @@ export class EthereumIntegrationService extends EventEmitter {
      */
     public async createBlockchainTradeLoop(
         tradeLoop: TradeLoop,
-        creatorWallet?: Wallet
+        creatorWallet?: Wallet | ethers.HDNodeWallet
     ): Promise<EthereumBlockchainTradeLoop> {
         const operation = this.logger.operation('createBlockchainTradeLoop');
         
@@ -190,7 +190,7 @@ export class EthereumIntegrationService extends EventEmitter {
      */
     public async approveTradeStep(
         swapId: string,
-        participantWallet: Wallet
+        participantWallet: Wallet | ethers.HDNodeWallet
     ): Promise<string> {
         const operation = this.logger.operation('approveTradeStep');
         
