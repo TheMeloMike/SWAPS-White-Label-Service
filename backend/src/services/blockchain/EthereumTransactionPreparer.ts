@@ -84,8 +84,8 @@ export class EthereumTransactionPreparer {
             // Build participants array
             const participants = tradeLoop.steps.map(step => {
                 const givingNFTs = step.nfts.map(nft => ({
-                    contractAddress: nft.platformData?.contractAddress || '0x0000000000000000000000000000000000000000',
-                    tokenId: nft.platformData?.tokenId || '0',
+                    contractAddress: nft.address || '0x0000000000000000000000000000000000000000',
+                    tokenId: '1', // Default token ID, should be enhanced to extract from nft.address
                     currentOwner: step.from,
                     isERC1155: false,
                     amount: 1
