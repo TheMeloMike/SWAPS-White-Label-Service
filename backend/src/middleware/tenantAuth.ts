@@ -145,6 +145,58 @@ export class TenantAuthMiddleware {
     
     next();
   };
+
+  /**
+   * Optional authentication - adds tenant info if valid API key provided, but doesn't require it
+   */
+  public authenticateOptional = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    const operation = this.logger.operation('authenticateOptional');
+    
+    try {
+      // Try to extract API key
+      const apiKey = this.extractApiKey(req);
+      
+      if (!apiKey) {
+        // No API key provided - continue without tenant context
+        operation.info('No API key provided, continuing without tenant context');
+        operation.end();
+        next();
+        return;
+      }
+      
+      // Try to find tenant by API key
+      const tenant = await this.tenantService.getTenantByApiKey(apiKey);
+      
+      if (!tenant) {
+        // Invalid API key - continue without tenant context (don't fail)
+        operation.warn('Invalid API key provided, continuing without tenant context');
+        operation.end();
+        next();
+        return;
+      }
+      
+      // Valid tenant found - add to request context
+      req.tenant = tenant;
+      
+      // Update usage tracking
+      await this.tenantService.trackApiUsage(tenant.id, req.path);
+      
+      operation.info('Optional authentication successful', {
+        tenantId: tenant.id,
+        tenantName: tenant.name
+      });
+      operation.end();
+      next();
+      
+    } catch (error) {
+      // Log error but don't fail the request
+      operation.error('Optional authentication error', {
+        error: error instanceof Error ? error.message : String(error)
+      });
+      operation.end();
+      next(); // Continue without tenant context
+    }
+  };
 }
 
 // Export middleware instance
