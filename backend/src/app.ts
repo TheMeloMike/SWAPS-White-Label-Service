@@ -67,6 +67,7 @@ import { BackgroundTradeDiscoveryService } from './services/trade/BackgroundTrad
 // Import white label routes
 import whiteLabelApiRoutes from './routes/whiteLabelApi.routes';
 import blockchainRoutes from './routes/blockchain.routes';
+import blockchainV2Routes from './routes/blockchain.v2.routes'; // V2: User pays gas model
 import healthRoutes from './routes/health.routes';
 import docsRoutes from './routes/docs.routes';
 import monitoringRoutes, { trackRequests } from './routes/monitoring.routes';
@@ -146,7 +147,8 @@ app.use('/api', detectApiVersion);
 
 // API Routes with specific rate limits
 app.use('/api/v1', whiteLabelApiRoutes);
-app.use('/api/v1/blockchain', blockchainRoutes); // Blockchain integration endpoints
+app.use('/api/v1/blockchain', blockchainRoutes); // Blockchain integration endpoints (V1: legacy)
+app.use('/api/v2/blockchain', blockchainV2Routes); // Blockchain V2: User pays gas model
 app.use('/health', healthRoutes);
 app.use('/monitoring', monitoringRoutes); // Enterprise monitoring endpoints
 app.use('/security', securityRoutes); // Security management endpoints (admin only)
@@ -169,13 +171,17 @@ app.get('/favicon.ico', (req, res) => {
 app.get('/', (req, res) => {
   res.json({
     service: 'SWAPS White Label API',
-    version: '1.0.0',
+    version: '2.0.0',
     status: 'operational',
     endpoints: {
       api: '/api/v1',
       blockchain: '/api/v1/blockchain',
+      blockchainV2: '/api/v2/blockchain',
       health: '/health',
       documentation: 'https://desert-adjustment-111.notion.site/SWAPS-White-Label-Documentation-2409b1fc08278068a469c60e33a105d8'
+    },
+    updates: {
+      v2: 'User-pays-gas model now available at /api/v2/blockchain'
     },
     blockchain: {
       network: 'Solana Devnet',
