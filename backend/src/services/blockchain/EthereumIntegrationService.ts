@@ -25,7 +25,9 @@ export interface EthereumTradeStep {
 
 export interface EthereumBlockchainTradeLoop {
     swapId: string;
+    tradeId: string; // Alias for compatibility with Solana interface
     contractAddress: string;
+    accountAddress: string; // Alias for compatibility with Solana interface
     participants: number;
     steps: EthereumTradeStep[];
     status: 'created' | 'approving' | 'executing' | 'completed' | 'cancelled' | 'expired';
@@ -152,7 +154,9 @@ export class EthereumIntegrationService extends EventEmitter {
 
             const blockchainTradeLoop: EthereumBlockchainTradeLoop = {
                 swapId: swapId,
+                tradeId: swapId, // Alias for compatibility
                 contractAddress: this.config.contractAddress,
+                accountAddress: this.config.contractAddress, // Alias for compatibility
                 participants: participants.length,
                 steps: this.convertToTradeSteps(tradeLoop),
                 status: 'created',
@@ -177,7 +181,7 @@ export class EthereumIntegrationService extends EventEmitter {
             operation.error('Failed to create Ethereum trade loop', { error: error.message });
             throw new Error(`Ethereum trade creation failed: ${error.message}`);
         } finally {
-            operation.complete();
+            operation.end();
         }
     }
 
@@ -228,7 +232,7 @@ export class EthereumIntegrationService extends EventEmitter {
             });
             throw new Error(`Trade approval failed: ${error.message}`);
         } finally {
-            operation.complete();
+            operation.end();
         }
     }
 
@@ -298,7 +302,7 @@ export class EthereumIntegrationService extends EventEmitter {
             });
             throw new Error(`Swap execution failed: ${error.message}`);
         } finally {
-            operation.complete();
+            operation.end();
         }
     }
 
@@ -368,7 +372,7 @@ export class EthereumIntegrationService extends EventEmitter {
             operation.error('Failed to cancel swap', { swapId, error: error.message });
             throw error;
         } finally {
-            operation.complete();
+            operation.end();
         }
     }
 
@@ -480,7 +484,7 @@ export class EthereumIntegrationService extends EventEmitter {
 
     private setupEventListeners(): void {
         // Listen to contract events
-        this.contract.on('SwapCreated', (swapId, initiator, participantCount, expiresAt) => {
+        this.contract.on('SwapCreated', (swapId: string, initiator: string, participantCount: any, expiresAt: any) => {
             this.logger.info('SwapCreated event', {
                 swapId: swapId,
                 initiator,
@@ -488,14 +492,14 @@ export class EthereumIntegrationService extends EventEmitter {
             });
         });
 
-        this.contract.on('SwapApproved', (swapId, participant) => {
+        this.contract.on('SwapApproved', (swapId: string, participant: string) => {
             this.logger.info('SwapApproved event', {
                 swapId: swapId,
                 participant
             });
         });
 
-        this.contract.on('SwapExecuted', (swapId, participantCount, nftCount) => {
+        this.contract.on('SwapExecuted', (swapId: string, participantCount: any, nftCount: any) => {
             this.logger.info('SwapExecuted event', {
                 swapId: swapId,
                 participantCount: Number(participantCount),
@@ -503,7 +507,7 @@ export class EthereumIntegrationService extends EventEmitter {
             });
         });
 
-        this.contract.on('SwapCancelled', (swapId, canceller, reason) => {
+        this.contract.on('SwapCancelled', (swapId: string, canceller: string, reason: string) => {
             this.logger.info('SwapCancelled event', {
                 swapId: swapId,
                 canceller,
