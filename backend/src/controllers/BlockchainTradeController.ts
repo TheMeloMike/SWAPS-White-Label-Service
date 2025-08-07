@@ -144,9 +144,13 @@ export class BlockchainTradeController {
                         .sort((a, b) => (b.qualityScore || 0) - (a.qualityScore || 0))
                         .slice(0, Math.min(5, request.settings?.maxResults || 5));
 
+                    // Determine blockchain type for trade creation
+                    const blockchainType = this.determineBlockchainType(req, request);
+                    const blockchainService = this.getBlockchainService(blockchainType);
+
                     for (const trade of topTrades) {
                         try {
-                            const blockchainTrade = await this.solanaService.createBlockchainTradeLoop(trade);
+                            const blockchainTrade = await blockchainService.createBlockchainTradeLoop(trade);
                             blockchainTrades.push(blockchainTrade);
                             
                             // Add blockchain metadata to original trade
@@ -155,11 +159,13 @@ export class BlockchainTradeController {
                                 tradeId: blockchainTrade.tradeId,
                                 accountAddress: blockchainTrade.accountAddress,
                                 explorerUrl: blockchainTrade.explorerUrl,
-                                status: blockchainTrade.status
+                                status: blockchainTrade.status,
+                                blockchain: blockchainType
                             };
                         } catch (error) {
                             this.logger.warn('Failed to create blockchain trade loop', {
                                 tradeId: trade.id,
+                                blockchain: blockchainType,
                                 error: error instanceof Error ? error.message : String(error)
                             });
                         }
@@ -668,17 +674,35 @@ export class BlockchainTradeController {
      * Determine blockchain type from request or tenant settings
      */
     private determineBlockchainType(req: Request & { tenant?: any }, requestBody?: any): string {
-        // Priority 1: Explicit request parameter
-        if (requestBody?.settings?.blockchainFormat) {
+        // Priority 1: Explicit request override (only if tenant allows switching)
+        if (requestBody?.settings?.blockchainFormat && req.tenant?.settings?.blockchain?.allowSwitching) {
             return requestBody.settings.blockchainFormat;
         }
         
-        // Priority 2: Tenant preference (could be added to tenant model)
+        // Priority 2: Tenant's configured blockchain preference
+        if (req.tenant?.settings?.blockchain?.preferred) {
+            return req.tenant.settings.blockchain.preferred;
+        }
+        
+        // Priority 3: Legacy tenant preference field (backward compatibility)
         if (req.tenant?.preferredBlockchain) {
             return req.tenant.preferredBlockchain;
         }
         
-        // Priority 3: Global default based on available services
+        // Priority 4: Legacy metadata field (backward compatibility)
+        if (req.tenant?.metadata?.blockchain) {
+            const blockchain = req.tenant.metadata.blockchain.toLowerCase();
+            if (blockchain === 'ethereum' || blockchain === 'solana') {
+                return blockchain;
+            }
+        }
+        
+        // Priority 5: Request parameter (if no tenant preference)
+        if (requestBody?.settings?.blockchainFormat) {
+            return requestBody.settings.blockchainFormat;
+        }
+        
+        // Priority 6: Global default based on available services
         if (this.ethereumService) {
             return 'ethereum';
         }

@@ -66,6 +66,12 @@ export interface TenantConfig {
     salt: string;
   };
   settings: {
+    blockchain: {
+      preferred: 'ethereum' | 'solana';    // Primary blockchain selection
+      allowSwitching?: boolean;            // Allow switching between blockchains
+      ethereumNetwork?: 'mainnet' | 'sepolia' | 'goerli' | 'holesky';
+      solanaNetwork?: 'mainnet-beta' | 'devnet' | 'testnet';
+    };
     algorithm: {
       maxDepth: number;                    // Max participants in trade loops
       minEfficiency: number;               // Minimum efficiency threshold

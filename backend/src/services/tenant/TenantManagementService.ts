@@ -11,7 +11,13 @@ export interface TenantCreationRequest {
   name: string;
   contactEmail: string;
   industry?: string;
-  blockchain?: string;
+  blockchain?: string;  // DEPRECATED: Use blockchainSettings.preferred instead
+  blockchainSettings?: {
+    preferred: 'ethereum' | 'solana';
+    allowSwitching?: boolean;
+    ethereumNetwork?: 'mainnet' | 'sepolia' | 'goerli' | 'holesky';
+    solanaNetwork?: 'mainnet-beta' | 'devnet' | 'testnet';
+  };
   webhookUrl?: string;
   algorithmSettings?: {
     maxDepth?: number;
@@ -79,6 +85,13 @@ export class TenantManagementService {
   private usageMutex = new Mutex();
   
   // Default configurations
+  private readonly DEFAULT_BLOCKCHAIN_SETTINGS = {
+    preferred: 'ethereum' as const,
+    allowSwitching: false,
+    ethereumNetwork: 'sepolia' as const,
+    solanaNetwork: 'devnet' as const
+  };
+
   private readonly DEFAULT_ALGORITHM_SETTINGS = {
     maxDepth: 10,
     minEfficiency: 0.6,
@@ -132,6 +145,12 @@ export class TenantManagementService {
         // Hash the API key for secure storage
         const hashedApiKey = SecurityUtils.hashApiKey(apiKey);
         
+        // Handle backward compatibility for blockchain setting
+        const blockchainSettings = request.blockchainSettings || {
+          ...this.DEFAULT_BLOCKCHAIN_SETTINGS,
+          preferred: (request.blockchain === 'solana' ? 'solana' : 'ethereum') as 'ethereum' | 'solana'
+        };
+
         // Create tenant configuration
         const tenant: TenantConfig = {
           id: tenantId,
@@ -139,6 +158,10 @@ export class TenantManagementService {
           apiKey: '', // Empty for security - only hashed version stored
           hashedApiKey,
           settings: {
+            blockchain: {
+              ...this.DEFAULT_BLOCKCHAIN_SETTINGS,
+              ...blockchainSettings
+            },
             algorithm: {
               ...this.DEFAULT_ALGORITHM_SETTINGS,
               ...request.algorithmSettings
@@ -158,7 +181,7 @@ export class TenantManagementService {
           },
           metadata: {
             industry: request.industry,
-            blockchain: request.blockchain,
+            blockchain: request.blockchain || blockchainSettings.preferred, // Keep for backward compatibility
             contactEmail: request.contactEmail
           },
           createdAt: new Date()

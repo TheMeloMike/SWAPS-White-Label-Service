@@ -109,7 +109,13 @@ export const TenantSchemas = {
     name: z.string().min(1).max(100),
     contactEmail: BaseSchemas.email,
     industry: z.enum(['gaming', 'collectibles', 'art', 'defi', 'other']).optional(),
-    blockchain: z.enum(['ethereum', 'solana', 'polygon', 'multi']).optional(),
+    blockchain: z.enum(['ethereum', 'solana', 'polygon', 'multi']).optional(),  // DEPRECATED
+    blockchainSettings: z.object({
+      preferred: z.enum(['ethereum', 'solana']),
+      allowSwitching: z.boolean().default(false).optional(),
+      ethereumNetwork: z.enum(['mainnet', 'sepolia', 'goerli', 'holesky']).default('sepolia').optional(),
+      solanaNetwork: z.enum(['mainnet-beta', 'devnet', 'testnet']).default('devnet').optional(),
+    }).optional(),
     webhookUrl: BaseSchemas.url.optional(),
     algorithmSettings: z.object({
       maxDepth: z.number().int().min(2).max(20).optional(),
