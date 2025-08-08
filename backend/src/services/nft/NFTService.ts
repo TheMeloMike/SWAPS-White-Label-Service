@@ -263,6 +263,24 @@ export class NFTService implements INFTService {
         operation.info(`Bypassing cache for NFT: ${mintAddress}`);
       }
 
+      // 🚫 CRITICAL FIX: Skip Helius for Ethereum NFTs to prevent 401 errors
+      if (this.isEthereumNFT(mintAddress)) {
+        operation.info(`Skipping Helius for Ethereum NFT: ${mintAddress}`);
+        const metadata = this.getEthereumNFTMetadata(mintAddress);
+        this.metadataCache.set(mintAddress, { metadata, timestamp: Date.now() });
+        operation.end();
+        return metadata;
+      }
+
+      // Only call Helius for valid Solana mint addresses
+      if (!this.isValidSolanaMintAddress(mintAddress)) {
+        operation.warn(`Invalid Solana mint address, using placeholder: ${mintAddress}`);
+        const metadata = this.getPlaceholderMetadata(mintAddress);
+        this.metadataCache.set(mintAddress, { metadata, timestamp: Date.now() });
+        operation.end();
+        return metadata;
+      }
+
       const asset = await this.fetchHeliusAsset(mintAddress);
 
       // Log the entire asset.grouping array to inspect its structure for verification flags
@@ -525,6 +543,76 @@ export class NFTService implements INFTService {
       operation.end();
       return placeholder;
     }
+  }
+
+  /**
+   * Check if this is an Ethereum NFT (not a Solana mint address)
+   */
+  private isEthereumNFT(mintAddress: string): boolean {
+    // Ethereum NFTs in our system start with "nft_token_" or are 40-character hex addresses
+    return mintAddress.startsWith('nft_token_') || 
+           (mintAddress.startsWith('0x') && mintAddress.length === 42) ||
+           mintAddress.includes('ethereum') ||
+           mintAddress.includes('sepolia');
+  }
+
+  /**
+   * Check if this is a valid Solana mint address (base58, 32-44 characters)
+   */
+  private isValidSolanaMintAddress(mintAddress: string): boolean {
+    // Solana addresses are base58 encoded, typically 32-44 characters
+    const base58Regex = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
+    return base58Regex.test(mintAddress) && !mintAddress.includes('0x');
+  }
+
+  /**
+   * Get metadata for Ethereum NFTs without calling Helius
+   */
+  private getEthereumNFTMetadata(mintAddress: string): NFTMetadata {
+    return {
+      name: this.getEthereumNFTName(mintAddress),
+      symbol: 'ETH_NFT',
+      description: `Ethereum NFT ${mintAddress}`,
+      image: '',
+      collection: {
+        name: 'Ethereum Collection',
+        verified: false
+      },
+      attributes: [],
+      creators: [],
+      mintAddress: mintAddress,
+      blockchain: 'ethereum'
+    };
+  }
+
+  /**
+   * Get a friendly name for Ethereum NFTs
+   */
+  private getEthereumNFTName(mintAddress: string): string {
+    if (mintAddress === 'nft_token_1') return 'Cosmic Crystal';
+    if (mintAddress === 'nft_token_2') return 'Dragon Flame Sword';
+    if (mintAddress === 'nft_token_3') return 'Ethereal Protection Shield';
+    if (mintAddress.startsWith('nft_token_')) {
+      const tokenId = mintAddress.replace('nft_token_', '');
+      return `Ethereum NFT #${tokenId}`;
+    }
+    return `Ethereum NFT ${mintAddress.slice(0, 8)}...`;
+  }
+
+  /**
+   * Get placeholder metadata for invalid addresses
+   */
+  private getPlaceholderMetadata(mintAddress: string): NFTMetadata {
+    return {
+      name: `NFT ${mintAddress.slice(0, 8)}...`,
+      symbol: '',
+      description: '',
+      image: '',
+      collection: null,
+      attributes: [],
+      creators: [],
+      mintAddress: mintAddress
+    };
   }
   
   /**
