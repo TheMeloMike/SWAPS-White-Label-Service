@@ -637,16 +637,28 @@ export class AdvancedCanonicalCycleEngine {
     const steps = [];
     
     for (let i = 0; i < path.length; i++) {
-      const from = path[i];
-      const to = path[(i + 1) % path.length];
+      const wanter = path[i]; // Wallet that wants the NFT
+      const owner = path[(i + 1) % path.length]; // Wallet that owns the NFT
       
-      const nfts = graph[from]?.[to] || [];
-      if (nfts.length === 0) return null;
+      const wantedNfts = graph[wanter]?.[owner] || [];
+      if (wantedNfts.length === 0) return null;
       
+      // Find the NFTs that the owner actually owns that the wanter wants
+      const ownerWallet = wallets.get(owner);
+      if (!ownerWallet) return null;
+      
+      const actualOwnedNfts = wantedNfts.filter((nftId: string) => {
+        const actualOwner = nftOwnership.get(nftId);
+        return actualOwner === owner && ownerWallet.ownedNfts.has(nftId);
+      });
+      
+      if (actualOwnedNfts.length === 0) return null;
+      
+      // CORRECTED: Trade step represents owner giving NFT to wanter
       steps.push({
-        from,
-        to,
-        nfts: nfts.map((nftId: string) => ({
+        from: owner,  // The wallet that OWNS and GIVES the NFT
+        to: wanter,   // The wallet that WANTS and RECEIVES the NFT
+        nfts: actualOwnedNfts.map((nftId: string) => ({
           address: nftId,
           name: `NFT ${nftId.substring(0, 8)}`,
           symbol: '',
