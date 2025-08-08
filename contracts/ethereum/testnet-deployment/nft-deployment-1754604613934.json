@@ -1,0 +1,26 @@
+{
+  "contractAddress": "0xBeC1f3bD16609165e37B633c860A67b1F7ddB32B",
+  "nftContractAddress": "0xBeC1f3bD16609165e37B633c860A67b1F7ddB32B",
+  "deploymentTime": "2025-08-07T22:10:13.934Z",
+  "network": "sepolia",
+  "deployer": "0x0d37fA7B4488ACc557bc0E2389197B20a6846F1d",
+  "nfts": [
+    {
+      "owner": "alice",
+      "address": "0x0d37fA7B4488ACc557bc0E2389197B20a6846F1d",
+      "tokenId": 1
+    },
+    {
+      "owner": "bob",
+      "address": "0x2f43002bE78c0419C33dCaE1c1162E7D14599280",
+      "tokenId": 2
+    },
+    {
+      "owner": "carol",
+      "address": "0x75B493Cd4dB4364D3b5A8F291Bf4b351e9F4b3A2",
+      "tokenId": 3
+    }
+  ],
+  "contractName": "SWAPS Test NFT",
+  "contractSymbol": "SWAP"
+}

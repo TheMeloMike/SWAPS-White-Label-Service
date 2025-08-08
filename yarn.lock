@@ -2,6 +2,11 @@
 # yarn lockfile v1
 
 
+"@adraffy/ens-normalize@1.10.1":
+  version "1.10.1"
+  resolved "https://registry.npmjs.org/@adraffy/ens-normalize/-/ens-normalize-1.10.1.tgz"
+  integrity sha512-96Z2IP3mYmF1Xg2cDm8f1gWGf/HUVedQ3FMifV4kG/PQ4yEP51xDtRAEfhVNt5f/uzpNkZHwWQuUcu6D6K+Ekw==
+
 "@ampproject/remapping@^2.2.0":
   version "2.3.0"
   resolved "https://registry.npmjs.org/@ampproject/remapping/-/remapping-2.3.0.tgz"
@@ -2013,7 +2018,7 @@
   resolved "https://registry.npmjs.org/@metaplex-foundation/cusper/-/cusper-0.0.2.tgz"
   integrity sha512-S9RulC2fFCFOQraz61bij+5YCHhSO9llJegK8c8Y6731fSi6snUSQJdCUqYS8AIgR0TKbQvdvgSyIIdbDFZbBA==
 
-"@metaplex-foundation/js@^0.20.1":
+"@metaplex-foundation/js@^0.19.4", "@metaplex-foundation/js@^0.20.1":
   version "0.20.1"
   resolved "https://registry.npmjs.org/@metaplex-foundation/js/-/js-0.20.1.tgz"
   integrity sha512-aqiLoEiToXdfI5pS+17/GN/dIO2D31gLoVQvEKDQi9XcnOPVhfJerXDmwgKbhp79OGoYxtlvVw+b2suacoUzGQ==
@@ -2266,6 +2271,13 @@
   dependencies:
     "@noble/hashes" "1.4.0"
 
+"@noble/curves@1.2.0":
+  version "1.2.0"
+  resolved "https://registry.npmjs.org/@noble/curves/-/curves-1.2.0.tgz"
+  integrity sha512-oYclrNgRaM9SsBUBVbb8M6DTV7ZHRTKugureoYEncY5c65HOmRzvSiTE3y5CYaPYJA/GVkrhXEoF0M3Ya9PMnw==
+  dependencies:
+    "@noble/hashes" "1.3.2"
+
 "@noble/curves@1.4.2":
   version "1.4.2"
   resolved "https://registry.npmjs.org/@noble/curves/-/curves-1.4.2.tgz"
@@ -2297,6 +2309,11 @@
   version "1.1.3"
   resolved "https://registry.npmjs.org/@noble/hashes/-/hashes-1.1.3.tgz"
   integrity sha512-CE0FCR57H2acVI5UOzIGSSIYxZ6v/HOhDR0Ro9VLyhnzLwx0o8W1mmgaqlEUx4049qJDlIBRztv5k+MM8vbO3A==
+
+"@noble/hashes@1.3.2":
+  version "1.3.2"
+  resolved "https://registry.npmjs.org/@noble/hashes/-/hashes-1.3.2.tgz"
+  integrity sha512-MVC8EAQp7MvEcm30KWENFjgR+Mkmf+D189XJTkFIlwohU5hcBbn1ZkKq7KVTi2Hme3PMGF390DaL52beVrIihQ==
 
 "@nodelib/fs.scandir@2.1.5":
   version "2.1.5"
@@ -2638,7 +2655,7 @@
     "@solana/spl-token-metadata" "^0.1.6"
     buffer "^6.0.3"
 
-"@solana/web3.js@^1.21.0", "@solana/web3.js@^1.32.0", "@solana/web3.js@^1.36.0", "@solana/web3.js@^1.50.1", "@solana/web3.js@^1.56.2", "@solana/web3.js@^1.63.1", "@solana/web3.js@^1.66.2", "@solana/web3.js@^1.88.0", "@solana/web3.js@^1.95.3", "@solana/web3.js@^1.95.5", "@solana/web3.js@^1.98.4":
+"@solana/web3.js@^1.21.0", "@solana/web3.js@^1.32.0", "@solana/web3.js@^1.36.0", "@solana/web3.js@^1.50.1", "@solana/web3.js@^1.56.2", "@solana/web3.js@^1.63.1", "@solana/web3.js@^1.66.2", "@solana/web3.js@^1.88.0", "@solana/web3.js@^1.89.1", "@solana/web3.js@^1.95.3", "@solana/web3.js@^1.95.5", "@solana/web3.js@^1.98.4":
   version "1.98.4"
   resolved "https://registry.npmjs.org/@solana/web3.js/-/web3.js-1.98.4.tgz"
   integrity sha512-vv9lfnvjUsRiq//+j5pBdXig0IQdtzA0BRZ3bXEP4KaIyF1CcaydWqgyzQgfZMNIsWNWmG+AUHwPy4AHOD6gpw==
@@ -2887,7 +2904,7 @@
     "@types/node" "*"
     form-data "^4.0.0"
 
-"@types/node@*":
+"@types/node@*", "@types/node@^20.11.16":
   version "22.13.10"
   resolved "https://registry.npmjs.org/@types/node/-/node-22.13.10.tgz"
   integrity sha512-I6LPUvlRH+O6VRUqYOcMudhaIdUVWfsjnZavnsraHvpBwaEyMN29ry+0UVJhImYL16xsscu0aske3yA+uPOWfw==
@@ -2910,6 +2927,13 @@
   version "11.11.6"
   resolved "https://registry.npmjs.org/@types/node/-/node-11.11.6.tgz"
   integrity sha512-Exw4yUWMBXM3X+8oqzJNRqZSwUAaS4+7NdvHqQuFi/d+synz++xmX3QIf+BFqneW8N31R8Ky+sikfZUXq07ggQ==
+
+"@types/node@22.7.5":
+  version "22.7.5"
+  resolved "https://registry.npmjs.org/@types/node/-/node-22.7.5.tgz"
+  integrity sha512-jML7s2NAzMWc//QSJ1a3prpk78cOPchGvXJsC3C6R6PSMoooztvRVQEz89gmBTBY1SPMaqo5teB4uNHPdetShQ==
+  dependencies:
+    undici-types "~6.19.2"
 
 "@types/qs@*":
   version "6.9.18"
@@ -3151,6 +3175,11 @@ aes-js@3.0.0:
   version "3.0.0"
   resolved "https://registry.npmjs.org/aes-js/-/aes-js-3.0.0.tgz"
   integrity sha512-H7wUZRn8WpTq9jocdxQ2c8x2sKo9ZVmzfRE13GiNJXfp7NcKYEdvl3vspKjXox6RIG2VtaRe4JFvxG4rqp2Zuw==
+
+aes-js@4.0.0-beta.5:
+  version "4.0.0-beta.5"
+  resolved "https://registry.npmjs.org/aes-js/-/aes-js-4.0.0-beta.5.tgz"
+  integrity sha512-G965FqalsNyrPqgEGON7nIx1e/OVENSgiEIzyC63haUMuvNnwIgIjMs52hlTCKhkBny7A2ORNlfY9Zu+jmGk1Q==
 
 agentkeepalive@^4.5.0:
   version "4.6.0"
@@ -4731,6 +4760,19 @@ ethereum-cryptography@^2.0.0, ethereum-cryptography@^2.1.2:
     "@noble/hashes" "1.4.0"
     "@scure/bip32" "1.4.0"
     "@scure/bip39" "1.3.0"
+
+ethers@^6.15.0:
+  version "6.15.0"
+  resolved "https://registry.npmjs.org/ethers/-/ethers-6.15.0.tgz"
+  integrity sha512-Kf/3ZW54L4UT0pZtsY/rf+EkBU7Qi5nnhonjUb8yTXcxH3cdcWrV2cRyk0Xk/4jK6OoHhxxZHriyhje20If2hQ==
+  dependencies:
+    "@adraffy/ens-normalize" "1.10.1"
+    "@noble/curves" "1.2.0"
+    "@noble/hashes" "1.3.2"
+    "@types/node" "22.7.5"
+    aes-js "4.0.0-beta.5"
+    tslib "2.7.0"
+    ws "8.17.1"
 
 ethjs-unit@0.1.6:
   version "0.1.6"
@@ -8070,6 +8112,7 @@ swagger-ui-express@^5.0.1:
     axios "^1.9.0"
     bcryptjs "^3.0.2"
     bloom-filters "^3.0.0"
+    borsh "^2.0.0"
     cheerio "^1.1.0"
     cors "^2.8.5"
     dotenv "^16.5.0"
@@ -8226,6 +8269,11 @@ tslib@^2.1.0, tslib@^2.4.0, tslib@^2.6.2, tslib@^2.8.0, tslib@^2.8.1:
   resolved "https://registry.npmjs.org/tslib/-/tslib-2.8.1.tgz"
   integrity sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w==
 
+tslib@2.7.0:
+  version "2.7.0"
+  resolved "https://registry.npmjs.org/tslib/-/tslib-2.7.0.tgz"
+  integrity sha512-gLXCKdN1/j47AiHiOkJN69hJmcbGTHI0ImLmbYLHykhgeN0jVGola9yVjFgzCUklsZQMW55o+dW7IXv3RCXDzA==
+
 tsyringe@^4.8.0, tsyringe@^4.9.1:
   version "4.9.1"
   resolved "https://registry.npmjs.org/tsyringe/-/tsyringe-4.9.1.tgz"
@@ -8278,10 +8326,15 @@ typescript-collections@^1.3.3:
   resolved "https://registry.npmjs.org/typescript-collections/-/typescript-collections-1.3.3.tgz"
   integrity sha512-7sI4e/bZijOzyURng88oOFZCISQPTHozfE2sUu5AviFYk5QV7fYGb6YiDl+vKjF/pICA354JImBImL9XJWUvdQ==
 
-typescript@^5.9.2, typescript@>=2.7, typescript@>=4.2.0, "typescript@>=4.3 <6", typescript@>=5:
+typescript@^5.3.3, typescript@^5.9.2, typescript@>=2.7, typescript@>=4.2.0, "typescript@>=4.3 <6", typescript@>=5:
   version "5.9.2"
   resolved "https://registry.npmjs.org/typescript/-/typescript-5.9.2.tgz"
   integrity sha512-CWBzXQrc/qOkhidw1OzBTQuYRbfyxDXJMVJ1XNwUHGROVmuaeiEm3OslpZ1RV96d7SKKjZKrSJu3+t/xlw3R9A==
+
+undici-types@~6.19.2:
+  version "6.19.8"
+  resolved "https://registry.npmjs.org/undici-types/-/undici-types-6.19.8.tgz"
+  integrity sha512-ve2KP6f/JnbPBFyobGHuerC9g1FYGn/F8n1LWTwNxCEzd6IfqTwUQcNXgEtmmQ6DlRrC1hrSrBnCZPokRrDHjw==
 
 undici-types@~6.20.0:
   version "6.20.0"
@@ -8560,6 +8613,11 @@ ws@^7.5.10:
   version "7.5.10"
   resolved "https://registry.npmjs.org/ws/-/ws-7.5.10.tgz"
   integrity sha512-+dbF1tHwZpXcbOJdVOkzLDxZP1ailvSxM6ZweXTegylPny803bFhA+vqBYw4s31NSAk4S2Qz+AKXK9a4wkdjcQ==
+
+ws@8.17.1:
+  version "8.17.1"
+  resolved "https://registry.npmjs.org/ws/-/ws-8.17.1.tgz"
+  integrity sha512-6XQFvXTkbfUOZOKKILFG1PDK2NDQs4azKQl26T0YS5CxqWLgXajbPZ+h4gZekJyRqFU8pvnbAbbs/3TgRPy+GQ==
 
 xtend@^4.0.0:
   version "4.0.2"

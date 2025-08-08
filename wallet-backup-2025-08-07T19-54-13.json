@@ -1,0 +1,20 @@
+{
+  "alice": {
+    "name": "Alice",
+    "address": "0x0d37fA7B4488ACc557bc0E2389197B20a6846F1d",
+    "privateKey": "0x755dad0d4ca9dedd8d77d31030eeee2e96a4aa4468c554004454e4897e2d0d27",
+    "walletId": "alice_sepolia_test"
+  },
+  "bob": {
+    "name": "Bob",
+    "address": "0x2f43002bE78c0419C33dCaE1c1162E7D14599280",
+    "privateKey": "0x36744d678f5d56f1052f6be47ef27be598846f67e1d5b3a400e27f91b14b5c54",
+    "walletId": "bob_sepolia_test"
+  },
+  "carol": {
+    "name": "Carol",
+    "address": "0x75B493Cd4dB4364D3b5A8F291Bf4b351e9F4b3A2",
+    "privateKey": "0x900d0eecf60883e3e857b2b715dd87196310adcb41cbe691ae0921b566840cd4",
+    "walletId": "carol_sepolia_test"
+  }
+}

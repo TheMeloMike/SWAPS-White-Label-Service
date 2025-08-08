@@ -1,0 +1,96 @@
+{
+  "contractAddress": "0xBeC1f3bD16609165e37B633c860A67b1F7ddB32B",
+  "deploymentTime": "2025-08-07T22:10:13.933Z",
+  "network": "sepolia",
+  "type": "real_deployed",
+  "note": "These are test NFT configurations for SWAPS demonstration",
+  "nfts": [
+    {
+      "name": "alice",
+      "walletAddress": "0x0d37fA7B4488ACc557bc0E2389197B20a6846F1d",
+      "contractAddress": "0xBeC1f3bD16609165e37B633c860A67b1F7ddB32B",
+      "tokenId": 1,
+      "metadata": {
+        "name": "Cosmic Crystal",
+        "description": "A rare cosmic crystal with mysterious powers from the depths of space",
+        "image": "https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=400",
+        "attributes": [
+          {
+            "trait_type": "Rarity",
+            "value": "Legendary"
+          },
+          {
+            "trait_type": "Element",
+            "value": "Cosmic"
+          },
+          {
+            "trait_type": "Power Level",
+            "value": 95
+          },
+          {
+            "trait_type": "Origin",
+            "value": "Nebula Core"
+          }
+        ]
+      }
+    },
+    {
+      "name": "bob",
+      "walletAddress": "0x2f43002bE78c0419C33dCaE1c1162E7D14599280",
+      "contractAddress": "0xBeC1f3bD16609165e37B633c860A67b1F7ddB32B",
+      "tokenId": 2,
+      "metadata": {
+        "name": "Dragon Flame Sword",
+        "description": "An ancient blade forged in the heart of a sleeping dragon",
+        "image": "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400",
+        "attributes": [
+          {
+            "trait_type": "Rarity",
+            "value": "Epic"
+          },
+          {
+            "trait_type": "Element",
+            "value": "Fire"
+          },
+          {
+            "trait_type": "Power Level",
+            "value": 88
+          },
+          {
+            "trait_type": "Crafted By",
+            "value": "Dragon Smith"
+          }
+        ]
+      }
+    },
+    {
+      "name": "carol",
+      "walletAddress": "0x75B493Cd4dB4364D3b5A8F291Bf4b351e9F4b3A2",
+      "contractAddress": "0xBeC1f3bD16609165e37B633c860A67b1F7ddB32B",
+      "tokenId": 3,
+      "metadata": {
+        "name": "Ethereal Protection Shield",
+        "description": "A mystical shield that bends reality to protect its wielder",
+        "image": "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400",
+        "attributes": [
+          {
+            "trait_type": "Rarity",
+            "value": "Rare"
+          },
+          {
+            "trait_type": "Element",
+            "value": "Ethereal"
+          },
+          {
+            "trait_type": "Power Level",
+            "value": 82
+          },
+          {
+            "trait_type": "Enchantment",
+            "value": "Reality Bending"
+          }
+        ]
+      }
+    }
+  ]
+}
