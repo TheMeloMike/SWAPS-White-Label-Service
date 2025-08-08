@@ -141,10 +141,38 @@ export class EthereumTransactionPreparer {
                     };
                 });
                 
+                // Find the NFTs this participant will receive
+                // Look for steps where this wallet is the recipient (step.to)
+                const receivingNFTs = tradeLoop.steps
+                    .filter(tradeStep => tradeStep.to === step.from)
+                    .flatMap(tradeStep => {
+                        return tradeStep.nfts.map(nft => {
+                            const contractInfo = nftContractInfo.get(nft.address);
+                            if (!contractInfo) {
+                                throw new Error(`No contract info found for NFT: ${nft.address}`);
+                            }
+                            
+                            // Find the current owner's wallet address
+                            const currentOwnerWalletId = tradeStep.from;
+                            const currentOwnerAddress = walletAddresses.get(currentOwnerWalletId);
+                            if (!currentOwnerAddress) {
+                                throw new Error(`No Ethereum address found for current owner wallet ID: ${currentOwnerWalletId}`);
+                            }
+                            
+                            return {
+                                contractAddress: contractInfo.contractAddress,
+                                tokenId: contractInfo.tokenId,
+                                currentOwner: currentOwnerAddress,
+                                isERC1155: false,
+                                amount: 1
+                            };
+                        });
+                    });
+                
                 return {
                     wallet: walletAddress, // Use resolved Ethereum address
                     givingNFTs,
-                    receivingNFTs: [], // Will be filled based on trade logic
+                    receivingNFTs,
                     hasApproved: false
                 };
             });
