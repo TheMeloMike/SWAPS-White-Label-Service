@@ -584,17 +584,49 @@ export class PersistentTradeDiscoveryService extends EventEmitter {
           const nftOwnership = new Map<string, string>();
           const wantedNfts = new Map<string, Set<string>>();
 
-          // Convert AbstractNFTs to ownership mapping
+          // 🔐 VALIDATE ON-CHAIN OWNERSHIP BEFORE BUILDING MAPS
+          const validatedNfts = new Map<string, AbstractNFT>();
+          
+          operation.info('Starting on-chain ownership validation during data transformation', {
+            tenantId,
+            totalNfts: graph.nfts.size
+          });
+          
+          // Validate each NFT's on-chain ownership
           for (const [nftId, nft] of graph.nfts.entries()) {
-            nftOwnership.set(nftId, nft.ownership.ownerId);
+            try {
+              const validation = await this.ownershipValidator.validateOwnership(nft, nft.ownership.ownerId);
+              if (validation.isValid) {
+                validatedNfts.set(nftId, nft);
+                nftOwnership.set(nftId, nft.ownership.ownerId);
+              } else {
+                operation.warn('NFT ownership validation failed - excluding from discovery', {
+                  nftId: nft.id,
+                  expectedOwner: nft.ownership.ownerId,
+                  actualOwner: validation.actualOwner,
+                  error: validation.error
+                });
+              }
+            } catch (error) {
+              operation.error('Error validating NFT ownership - excluding from discovery', {
+                nftId: nft.id,
+                error: error instanceof Error ? error.message : String(error)
+              });
+            }
           }
+          
+          operation.info('Ownership validation completed', {
+            totalNfts: graph.nfts.size,
+            validatedNfts: validatedNfts.size,
+            excludedNfts: graph.nfts.size - validatedNfts.size
+          });
 
-          // Convert AbstractWallets to WalletState format
+          // Convert AbstractWallets to WalletState format (using only validated NFTs)
           for (const [walletId, wallet] of graph.wallets.entries()) {
             const ownedNftIds = new Set<string>();
             
-            // Find NFTs owned by this wallet
-            for (const [nftId, nft] of graph.nfts.entries()) {
+            // Find validated NFTs owned by this wallet
+            for (const [nftId, nft] of validatedNfts.entries()) {
               if (nft.ownership.ownerId === walletId) {
                 ownedNftIds.add(nftId);
               }
