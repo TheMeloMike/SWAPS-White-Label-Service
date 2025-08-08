@@ -576,12 +576,11 @@ export class NFTService implements INFTService {
       image: '',
       collection: {
         name: 'Ethereum Collection',
-        verified: false
+        family: 'Ethereum'
       },
       attributes: [],
       creators: [],
-      mintAddress: mintAddress,
-      blockchain: 'ethereum'
+      mintAddress: mintAddress
     };
   }
 
@@ -608,7 +607,7 @@ export class NFTService implements INFTService {
       symbol: '',
       description: '',
       image: '',
-      collection: null,
+      collection: 'Unknown Collection',
       attributes: [],
       creators: [],
       mintAddress: mintAddress
