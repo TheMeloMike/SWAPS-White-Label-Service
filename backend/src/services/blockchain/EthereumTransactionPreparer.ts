@@ -126,11 +126,15 @@ export class EthereumTransactionPreparer {
                     throw new Error(`No Ethereum address found for wallet ID: ${step.from}`);
                 }
                 
+                operation.info(`🔍 Processing participant ${step.from} (${walletAddress})`);
+                
                 const givingNFTs = step.nfts.map(nft => {
                     const contractInfo = nftContractInfo.get(nft.address);
                     if (!contractInfo) {
                         throw new Error(`No contract info found for NFT: ${nft.address}`);
                     }
+                    
+                    operation.info(`   GIVING: ${nft.address} → Contract ${contractInfo.contractAddress}, Token ${contractInfo.tokenId}`);
                     
                     return {
                         contractAddress: contractInfo.contractAddress,
@@ -146,6 +150,7 @@ export class EthereumTransactionPreparer {
                 const receivingNFTs = tradeLoop.steps
                     .filter(tradeStep => tradeStep.to === step.from)
                     .flatMap(tradeStep => {
+                        operation.info(`   RECEIVING from step: ${tradeStep.from} → ${tradeStep.to}`);
                         return tradeStep.nfts.map(nft => {
                             const contractInfo = nftContractInfo.get(nft.address);
                             if (!contractInfo) {
@@ -158,6 +163,8 @@ export class EthereumTransactionPreparer {
                             if (!currentOwnerAddress) {
                                 throw new Error(`No Ethereum address found for current owner wallet ID: ${currentOwnerWalletId}`);
                             }
+                            
+                            operation.info(`   RECEIVING: ${nft.address} → Contract ${contractInfo.contractAddress}, Token ${contractInfo.tokenId} from ${currentOwnerAddress}`);
                             
                             return {
                                 contractAddress: contractInfo.contractAddress,
