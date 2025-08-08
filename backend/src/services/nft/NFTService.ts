@@ -570,6 +570,7 @@ export class NFTService implements INFTService {
    */
   private getEthereumNFTMetadata(mintAddress: string): NFTMetadata {
     return {
+      address: mintAddress,
       name: this.getEthereumNFTName(mintAddress),
       symbol: 'ETH_NFT',
       description: `Ethereum NFT ${mintAddress}`,
@@ -578,9 +579,7 @@ export class NFTService implements INFTService {
         name: 'Ethereum Collection',
         family: 'Ethereum'
       },
-      attributes: [],
-      creators: [],
-      mintAddress: mintAddress
+      attributes: []
     };
   }
 
@@ -603,14 +602,13 @@ export class NFTService implements INFTService {
    */
   private getPlaceholderMetadata(mintAddress: string): NFTMetadata {
     return {
+      address: mintAddress,
       name: `NFT ${mintAddress.slice(0, 8)}...`,
       symbol: '',
       description: '',
       image: '',
       collection: 'Unknown Collection',
-      attributes: [],
-      creators: [],
-      mintAddress: mintAddress
+      attributes: []
     };
   }
   
