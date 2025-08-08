@@ -596,7 +596,7 @@ export class PersistentTradeDiscoveryService extends EventEmitter {
           for (const [nftId, nft] of graph.nfts.entries()) {
             try {
               // Use wallet address for validation, not wallet ID
-              const expectedOwnerAddress = nft.ownership.walletAddress || nft.platformData?.walletAddress;
+              const expectedOwnerAddress = nft.platformData?.walletAddress;
               if (!expectedOwnerAddress) {
                 operation.warn('No wallet address found for NFT - excluding from discovery', {
                   nftId: nft.id,
