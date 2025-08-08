@@ -220,7 +220,7 @@ export class WhiteLabelController {
         return;
       }
 
-      // Validate NFT data
+      // Validate NFT data structure
       const invalidNFTs = this.validateNFTArray(nfts);
       if (invalidNFTs.length > 0) {
         ErrorResponses.sendError(
@@ -231,32 +231,170 @@ export class WhiteLabelController {
         return;
       }
 
+      // 🔐 CRITICAL: Validate on-chain ownership BEFORE accepting data
+      const verifiedNFTs: AbstractNFT[] = [];
+      const failedValidations: { nft: any; error: string }[] = [];
+      
+      operation.info('Starting on-chain NFT ownership verification', {
+        tenantId: tenant.id,
+        walletId,
+        nftCount: nfts.length
+      });
+
+      for (const nft of nfts) {
+        try {
+          // Extract blockchain data
+          const walletAddress = nft.platformData?.walletAddress;
+          const contractAddress = nft.platformData?.contractAddress;
+          const tokenId = nft.platformData?.tokenId;
+          
+          // Validate required blockchain data
+          if (!walletAddress || !contractAddress || !tokenId) {
+            failedValidations.push({
+              nft,
+              error: 'Missing required blockchain data (walletAddress, contractAddress, or tokenId)'
+            });
+            continue;
+          }
+
+          // Validate wallet address format
+          const { ethers } = await import('ethers');
+          if (!ethers.isAddress(walletAddress)) {
+            failedValidations.push({
+              nft,
+              error: `Invalid wallet address format: ${walletAddress}`
+            });
+            continue;
+          }
+
+          if (!ethers.isAddress(contractAddress)) {
+            failedValidations.push({
+              nft,
+              error: `Invalid contract address format: ${contractAddress}`
+            });
+            continue;
+          }
+
+          // Get on-chain ownership validator
+          const { OnChainOwnershipValidator } = await import('../services/blockchain/OnChainOwnershipValidator');
+          const ownershipValidator = OnChainOwnershipValidator.getInstance();
+          
+          // Verify on-chain ownership
+          const validation = await ownershipValidator.validateOwnership(nft, walletAddress);
+          
+          if (validation.isValid) {
+            // Only accept NFTs with verified ownership
+            nft.ownership.ownerId = walletId;
+            verifiedNFTs.push(nft);
+            
+            operation.info('NFT ownership verified on-chain', {
+              nftId: nft.id,
+              contractAddress,
+              tokenId,
+              walletAddress,
+              walletId
+            });
+          } else {
+            failedValidations.push({
+              nft,
+              error: validation.error || `NFT not owned by ${walletAddress}. Actual owner: ${validation.actualOwner}`
+            });
+            
+            operation.warn('NFT ownership validation failed', {
+              nftId: nft.id,
+              contractAddress,
+              tokenId,
+              expectedOwner: walletAddress,
+              actualOwner: validation.actualOwner,
+              error: validation.error
+            });
+          }
+        } catch (error) {
+          failedValidations.push({
+            nft,
+            error: error instanceof Error ? error.message : 'Unknown validation error'
+          });
+          
+          operation.error('Error during NFT validation', {
+            nftId: nft.id,
+            error: error instanceof Error ? error.message : String(error)
+          });
+        }
+      }
+
+      // Return error if no NFTs passed validation
+      if (verifiedNFTs.length === 0) {
+        ErrorResponses.sendError(
+          res,
+          new ApiError(
+            'No NFTs passed on-chain ownership validation',
+            'OWNERSHIP_VALIDATION_FAILED',
+            400,
+            {
+              submitted: nfts.length,
+              verified: 0,
+              failures: failedValidations.map(f => ({
+                nftId: f.nft.id,
+                error: f.error
+              }))
+            }
+          )
+        );
+        operation.end();
+        return;
+      }
+
+      operation.info('On-chain validation completed', {
+        submitted: nfts.length,
+        verified: verifiedNFTs.length,
+        failed: failedValidations.length
+      });
+
       // Record API usage
       await this.tenantService.recordApiKeyUsage(tenant.id, 'nft_submission');
 
-      // Process NFT additions
+      // Process only verified NFT additions
       const newLoops: TradeLoop[] = [];
-      for (const nft of nfts) {
-        // Ensure ownership is set correctly
-        nft.ownership.ownerId = walletId;
+      for (const nft of verifiedNFTs) {
+        // Ownership is already set and verified
         
         const loops = await this.persistentTradeService.onNFTAdded(tenant.id, nft);
         newLoops.push(...loops);
       }
 
-      operation.info('Inventory submitted successfully', {
+      operation.info('Inventory submitted with verification', {
         tenantId: tenant.id,
         walletId,
         nftsSubmitted: nfts.length,
+        nftsVerified: verifiedNFTs.length,
+        nftsRejected: failedValidations.length,
         newLoopsDiscovered: newLoops.length
       });
 
-      res.json({
+      // Include partial success information in response
+      const response: any = {
         success: true,
-        nftsProcessed: nfts.length,
+        submitted: nfts.length,
+        verified: verifiedNFTs.length,
+        rejected: failedValidations.length,
+        nftsProcessed: verifiedNFTs.map(nft => ({
+          id: nft.id,
+          name: nft.metadata?.name
+        })),
         newLoopsDiscovered: newLoops.length,
         loops: newLoops
-      });
+      };
+
+      // Include validation failures if any
+      if (failedValidations.length > 0) {
+        response.validationFailures = failedValidations.map(f => ({
+          nftId: f.nft.id,
+          name: f.nft.metadata?.name,
+          error: f.error
+        }));
+      }
+
+      res.json(response);
       operation.end();
     } catch (error) {
       operation.error('Inventory submission failed', {
@@ -323,6 +461,19 @@ export class WhiteLabelController {
         operation.end();
         return;
       }
+
+      // 🔐 IMPORTANT: For wants, we currently accept NFT IDs without on-chain validation
+      // This is because:
+      // 1. Wanted NFTs may not be owned by the requesting wallet
+      // 2. The validation happens during trade discovery when matching owners
+      // 3. Future enhancement: Validate that NFT IDs correspond to real NFTs in the system
+      
+      operation.info('Processing wants submission', {
+        tenantId: tenant.id,
+        walletId,
+        wantCount: wantedNFTs.length,
+        note: 'On-chain validation deferred to trade discovery phase'
+      });
 
       // Process want additions
       const newLoops: TradeLoop[] = [];
