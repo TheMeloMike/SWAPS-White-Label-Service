@@ -632,13 +632,34 @@ export class PersistentTradeDiscoveryService extends EventEmitter {
           });
 
           // Convert AbstractWallets to WalletState format (using only validated NFTs)
+          // 🔍 DEBUG: Add detailed logging to understand the mapping issue
           for (const [walletId, wallet] of graph.wallets.entries()) {
             const ownedNftIds = new Set<string>();
             
+            operation.info('Processing wallet for ownership mapping', {
+              walletId,
+              walletType: typeof wallet
+            });
+            
             // Find validated NFTs owned by this wallet
             for (const [nftId, nft] of validatedNfts.entries()) {
+              operation.info('Checking NFT ownership mapping', {
+                nftId,
+                nftOwnershipOwnerId: nft.ownership.ownerId,
+                walletId,
+                platformWalletAddress: nft.platformData?.walletAddress,
+                contractAddress: nft.platformData?.contractAddress,
+                tokenId: nft.platformData?.tokenId
+              });
+              
               if (nft.ownership.ownerId === walletId) {
                 ownedNftIds.add(nftId);
+                operation.info('NFT assigned to wallet', {
+                  nftId,
+                  walletId,
+                  tokenId: nft.platformData?.tokenId,
+                  contractAddress: nft.platformData?.contractAddress
+                });
               }
             }
 
@@ -648,6 +669,12 @@ export class PersistentTradeDiscoveryService extends EventEmitter {
               wantedNfts: new Set(wallet.wantedNFTs),
               lastUpdated: new Date()
             };
+
+            operation.info('Final wallet state', {
+              walletId,
+              ownedNftCount: ownedNftIds.size,
+              ownedNftIds: Array.from(ownedNftIds)
+            });
 
             wallets.set(walletId, walletState);
           }
