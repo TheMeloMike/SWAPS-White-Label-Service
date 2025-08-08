@@ -595,14 +595,24 @@ export class PersistentTradeDiscoveryService extends EventEmitter {
           // Validate each NFT's on-chain ownership
           for (const [nftId, nft] of graph.nfts.entries()) {
             try {
-              const validation = await this.ownershipValidator.validateOwnership(nft, nft.ownership.ownerId);
+              // Use wallet address for validation, not wallet ID
+              const expectedOwnerAddress = nft.ownership.walletAddress || nft.platformData?.walletAddress;
+              if (!expectedOwnerAddress) {
+                operation.warn('No wallet address found for NFT - excluding from discovery', {
+                  nftId: nft.id,
+                  ownerId: nft.ownership.ownerId
+                });
+                continue;
+              }
+              
+              const validation = await this.ownershipValidator.validateOwnership(nft, expectedOwnerAddress);
               if (validation.isValid) {
                 validatedNfts.set(nftId, nft);
                 nftOwnership.set(nftId, nft.ownership.ownerId);
               } else {
                 operation.warn('NFT ownership validation failed - excluding from discovery', {
                   nftId: nft.id,
-                  expectedOwner: nft.ownership.ownerId,
+                  expectedOwner: expectedOwnerAddress,
                   actualOwner: validation.actualOwner,
                   error: validation.error
                 });
