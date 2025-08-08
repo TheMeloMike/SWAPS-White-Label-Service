@@ -8,6 +8,8 @@ import { LoggingService } from '../../utils/logging/LoggingService';
 // Import the dedicated SCC and Cycle finder services
 import { SCCFinderService } from './SCCFinderService';
 import { CycleFinderService } from './CycleFinderService';
+import { OnChainOwnershipValidator } from '../blockchain/OnChainOwnershipValidator';
+import { AbstractNFT } from '../../types/AbstractNFT';
 
 // Define interface for edge trade data
 interface EdgeTradeData {
@@ -35,6 +37,7 @@ export class TradeLoopFinderService {
   private nftPricingService: NFTPricingService;
   private nftService: NFTService;
   private logger: any; // Will be initialized in constructor
+  private ownershipValidator: OnChainOwnershipValidator;
   
   // DEBUGGING: Target wallets for enhanced logging
   private readonly TARGET_WALLETS = [
@@ -100,6 +103,7 @@ export class TradeLoopFinderService {
     // Initialize services
     this.nftService = NFTService.getInstance();
     this.nftPricingService = NFTPricingService.getInstance();
+    this.ownershipValidator = OnChainOwnershipValidator.getInstance();
     
     // Initialize caches
     this.nftMetadataCache = new Map();
@@ -184,7 +188,8 @@ export class TradeLoopFinderService {
     wallets: Map<string, WalletState>,
     nftOwnership: Map<string, string>,
     wantedNfts: Map<string, Set<string>>,
-    rejectionPreferences: Map<string, RejectionPreferences>
+    rejectionPreferences: Map<string, RejectionPreferences>,
+    nftMap?: Map<string, AbstractNFT>
   ): Promise<TradeLoop[]> {
     const operation = this.logger.operation('findAllTradeLoops');
     this.startTime = performance.now();
@@ -229,8 +234,25 @@ export class TradeLoopFinderService {
       // Step 5: Add direct matches to the trade loops
       const allTradeLoops = [...directMatches, ...tradeLoops];
       
+      // Step 5.5: Validate on-chain ownership for all trade loops (if NFT map is provided)
+      let validatedTradeLoops = allTradeLoops;
+      if (nftMap && nftMap.size > 0) {
+        operation.info('Starting on-chain ownership validation', {
+          tradeLoopsToValidate: allTradeLoops.length,
+          nftMapSize: nftMap.size
+        });
+        
+        validatedTradeLoops = await this.validateTradeLoopsOwnership(allTradeLoops, nftMap, operation);
+        
+        operation.info('Ownership validation completed', {
+          originalTradeLoops: allTradeLoops.length,
+          validatedTradeLoops: validatedTradeLoops.length,
+          rejectedDueToOwnership: allTradeLoops.length - validatedTradeLoops.length
+        });
+      }
+      
       // Step 6: Enhance trade loops with metadata and price information
-      const enhancedTrades = await this.enhanceTradeLoopsWithMetadata(allTradeLoops);
+      const enhancedTrades = await this.enhanceTradeLoopsWithMetadata(validatedTradeLoops);
       
       const endTime = performance.now();
       operation.info('Trade loop discovery completed', {
@@ -1651,5 +1673,46 @@ export class TradeLoopFinderService {
     // Combine and hash to create a unique ID
     const combined = sortedParticipants.join(',') + '|' + sortedNfts.join(',');
     return `trade_${combined}`;
+  }
+
+  /**
+   * Validate trade loops against on-chain ownership
+   * Filters out trade loops where participants don't actually own the NFTs they're supposed to give
+   */
+  private async validateTradeLoopsOwnership(
+    tradeLoops: TradeLoop[],
+    nftMap: Map<string, AbstractNFT>,
+    operation: any
+  ): Promise<TradeLoop[]> {
+    const validatedLoops: TradeLoop[] = [];
+    
+    for (const loop of tradeLoops) {
+      try {
+        // Validate this specific trade loop
+        const validation = await this.ownershipValidator.validateTradeLoopOwnership(loop, nftMap);
+        
+        if (validation.isValid) {
+          validatedLoops.push(loop);
+          operation.info('Trade loop passed ownership validation', {
+            tradeLoopId: loop.id,
+            participants: loop.totalParticipants
+          });
+        } else {
+          operation.warn('Trade loop failed ownership validation', {
+            tradeLoopId: loop.id,
+            participants: loop.totalParticipants,
+            errors: validation.errors
+          });
+        }
+      } catch (error) {
+        operation.error('Error validating trade loop ownership', {
+          tradeLoopId: loop.id,
+          error: error instanceof Error ? error.message : String(error)
+        });
+        // Skip this loop on validation error
+      }
+    }
+    
+    return validatedLoops;
   }
 }

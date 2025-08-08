@@ -5,6 +5,7 @@ import { DeltaDetectionEngine, SubgraphData } from './DeltaDetectionEngine';
 import { WebhookNotificationService } from '../notifications/WebhookNotificationService';
 import { DataSyncBridge } from './DataSyncBridge';
 import { AdvancedCanonicalCycleEngine, AdvancedCycleEngineConfig } from './AdvancedCanonicalCycleEngine';
+import { OnChainOwnershipValidator } from '../blockchain/OnChainOwnershipValidator';
 import { OptimizationManager } from '../optimization/OptimizationManager';
 import { AlgorithmConsolidationService } from './AlgorithmConsolidationService';
 import { 
@@ -45,6 +46,9 @@ export class PersistentTradeDiscoveryService extends EventEmitter {
   private canonicalEngine: AdvancedCanonicalCycleEngine;
   private enableCanonicalDiscovery: boolean;
   
+  // 🔐 OWNERSHIP VALIDATION
+  private ownershipValidator: OnChainOwnershipValidator;
+  
   // 🚀 ALGORITHM CONSOLIDATION SERVICE (Replaces multiple legacy algorithms)
   private algorithmConsolidation: AlgorithmConsolidationService;
   
@@ -81,6 +85,9 @@ export class PersistentTradeDiscoveryService extends EventEmitter {
     // ✨ INITIALIZE CANONICAL ENGINE
     this.canonicalEngine = AdvancedCanonicalCycleEngine.getInstance();
     this.enableCanonicalDiscovery = process.env.ENABLE_CANONICAL_DISCOVERY === 'true';
+    
+    // 🔐 INITIALIZE OWNERSHIP VALIDATION
+    this.ownershipValidator = OnChainOwnershipValidator.getInstance();
     
     // 🚀 INITIALIZE ALGORITHM CONSOLIDATION SERVICE
     this.algorithmConsolidation = AlgorithmConsolidationService.getInstance();
@@ -682,19 +689,45 @@ export class PersistentTradeDiscoveryService extends EventEmitter {
           const nftOwnership = new Map<string, string>();
           const wantedNfts = new Map<string, Set<string>>();
           
-          // Transform tenant data for canonical engine
+          // Transform tenant data for canonical engine WITH OWNERSHIP VALIDATION
           for (const [walletId, wallet] of graph.wallets) {
+            // 🔐 VALIDATE ACTUAL ON-CHAIN OWNERSHIP
+            const validatedOwnedNfts: string[] = [];
+            
+            for (const nft of wallet.ownedNFTs) {
+              try {
+                const validation = await this.ownershipValidator.validateOwnership(nft, walletId);
+                if (validation.isValid) {
+                  validatedOwnedNfts.push(nft.id);
+                } else {
+                  operation.warn('NFT ownership validation failed during transformation', {
+                    nftId: nft.id,
+                    expectedOwner: walletId,
+                    actualOwner: validation.actualOwner,
+                    error: validation.error
+                  });
+                }
+              } catch (error) {
+                operation.error('Error validating NFT ownership during transformation', {
+                  nftId: nft.id,
+                  walletId,
+                  error: error instanceof Error ? error.message : String(error)
+                });
+                // Skip this NFT on validation error
+              }
+            }
+            
             const walletState: WalletState = {
               address: walletId,
-              ownedNfts: new Set(wallet.ownedNFTs.map(nft => nft.id)),
+              ownedNfts: new Set(validatedOwnedNfts), // Use validated NFTs only
               wantedNfts: new Set(wallet.wantedNFTs),
               lastUpdated: new Date()
             };
             wallets.set(walletId, walletState);
             
-            // Build ownership mapping
-            for (const nft of wallet.ownedNFTs) {
-              nftOwnership.set(nft.id, walletId);
+            // Build ownership mapping with validated NFTs only
+            for (const validatedNftId of validatedOwnedNfts) {
+              nftOwnership.set(validatedNftId, walletId);
             }
             
             // Build wants mapping
