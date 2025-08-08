@@ -696,7 +696,9 @@ export class AdvancedCanonicalCycleEngine {
     const sortedParticipants = [...participants].sort();
     const sortedNfts = [...nfts].sort();
     const combined = sortedParticipants.join(',') + '|' + sortedNfts.join(',');
-    return `advanced_canonical_${combined}`;
+    // Add timestamp to make each trade ID unique
+    const timestamp = Date.now();
+    return `advanced_canonical_${combined}_${timestamp}`;
   }
 
   /**
