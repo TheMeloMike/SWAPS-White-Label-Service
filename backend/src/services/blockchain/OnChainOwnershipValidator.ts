@@ -1,6 +1,6 @@
 import { ethers } from 'ethers';
 import { LoggingService, Logger } from '../../utils/logging/LoggingService';
-import { AbstractNFT } from '../../types/AbstractNFT';
+import { AbstractNFT } from '../../types/abstract';
 
 /**
  * On-Chain Ownership Validator Service

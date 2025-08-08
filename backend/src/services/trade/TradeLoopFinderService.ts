@@ -9,7 +9,7 @@ import { LoggingService } from '../../utils/logging/LoggingService';
 import { SCCFinderService } from './SCCFinderService';
 import { CycleFinderService } from './CycleFinderService';
 import { OnChainOwnershipValidator } from '../blockchain/OnChainOwnershipValidator';
-import { AbstractNFT } from '../../types/AbstractNFT';
+import { AbstractNFT } from '../../types/abstract';
 
 // Define interface for edge trade data
 interface EdgeTradeData {
